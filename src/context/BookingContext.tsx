@@ -20,10 +20,23 @@ import {
 
 export type AppRole = 'customer' | 'washer';
 
+interface UserProfile {
+  name: string;
+  phone: string;
+  email: string;
+  role: AppRole;
+  avatarUrl?: string;
+}
+
 interface BookingContextType {
   role: AppRole;
   currentRole: AppRole;
   setRole: (role: AppRole) => void;
+  isAuthenticated: boolean;
+  userProfile: UserProfile | null;
+  loginAsCustomer: (identifier?: string) => void;
+  loginAsWasher: (identifier?: string) => void;
+  logoutUser: () => void;
   
   // Customer Booking Draft State
   draftService: ServiceCategory;
@@ -65,6 +78,43 @@ const BookingContext = createContext<BookingContextType | undefined>(undefined);
 
 export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [role, setRole] = useState<AppRole>('customer');
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>({
+    name: 'Lee Wei Jian',
+    phone: '+60 12-345 6789',
+    email: 'weijian@example.com',
+    role: 'customer',
+    avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+  });
+
+  const loginAsCustomer = (identifier: string = '+60 12-345 6789') => {
+    setRole('customer');
+    setIsAuthenticated(true);
+    setUserProfile({
+      name: 'Lee Wei Jian',
+      phone: identifier.includes('@') ? '+60 12-345 6789' : identifier,
+      email: identifier.includes('@') ? identifier : 'weijian@example.com',
+      role: 'customer',
+      avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+    });
+  };
+
+  const loginAsWasher = (identifier: string = '+60 18-987 6543') => {
+    setRole('washer');
+    setIsAuthenticated(true);
+    setUserProfile({
+      name: SAMPLE_WASHER.name,
+      phone: SAMPLE_WASHER.phone,
+      email: 'amir.washer@washcar.my',
+      role: 'washer',
+      avatarUrl: SAMPLE_WASHER.avatarUrl,
+    });
+  };
+
+  const logoutUser = () => {
+    setIsAuthenticated(false);
+    setUserProfile(null);
+  };
 
   // Customer Booking Draft Defaults
   const [draftService, setDraftService] = useState<ServiceCategory>(SERVICE_CATEGORIES[1]); // Interior + Exterior
@@ -248,6 +298,11 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       role,
       currentRole: role,
       setRole,
+      isAuthenticated,
+      userProfile,
+      loginAsCustomer,
+      loginAsWasher,
+      logoutUser,
       draftService,
       setDraftService,
       draftVehicle,
