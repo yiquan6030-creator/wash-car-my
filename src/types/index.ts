@@ -43,6 +43,9 @@ export interface LocationAddress {
   postcode: string;
   city: string;
   state: string;
+  latitude?: number;
+  longitude?: number;
+  isRealGps?: boolean;
   notesForWasher?: string;
 }
 

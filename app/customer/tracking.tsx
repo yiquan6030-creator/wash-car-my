@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useBooking } from '../../src/context/BookingContext';
 import { colors, spacing, borderRadius, shadows } from '../../src/theme';
 import { SAMPLE_WASHER } from '../../src/services/mockData';
+import GoogleMapContainer from '../../src/components/GoogleMapContainer';
 
 export default function LiveTrackingScreen() {
   const router = useRouter();
@@ -18,6 +19,9 @@ export default function LiveTrackingScreen() {
     setDemoArrival(true);
     updateBookingStatus('arrived');
   };
+
+  const currentLat = activeBooking?.location?.latitude || 3.1390;
+  const currentLng = activeBooking?.location?.longitude || 101.6869;
 
   return (
     <View style={styles.container}>
@@ -47,36 +51,21 @@ export default function LiveTrackingScreen() {
         {/* MAP & WASHER PROFILE GRID */}
         <View style={[styles.gridContainer, isDesktop && styles.gridContainerDesktop]}>
 
-          {/* SIMULATED VECTOR MAP CANVAS */}
-          <View style={[styles.mapContainerCard, isDesktop && styles.mapFlex]}>
-            <View style={styles.mapGraphicCanvas}>
-              {/* Roads & Blocks */}
-              <View style={styles.roadH1} />
-              <View style={styles.roadH2} />
-              <View style={styles.roadV1} />
-              <View style={styles.buildingBlock1} />
-              <View style={styles.buildingBlock2} />
-              <View style={styles.buildingBlock3} />
-
-              {/* Destination Marker */}
-              <View style={[styles.markerPinBox, styles.destPinPos]}>
-                <View style={styles.destPinBubble}>
-                  <Text style={styles.destPinBubbleText}>📍 Wash Location (Bangsar)</Text>
-                </View>
-                <View style={styles.pinDotRed} />
-              </View>
-
-              {/* Route Path Line */}
-              <View style={styles.routePathLine} />
-
-              {/* Washer Live Marker */}
-              <View style={[styles.markerPinBox, isArrived ? styles.washerArrivedPos : styles.washerEnRoutePos]}>
-                <Text style={{ fontSize: 32 }}>🛵</Text>
-                <View style={styles.washerBubbleTag}>
-                  <Text style={styles.washerBubbleText}>Amir Hazim (Detailer)</Text>
-                </View>
-              </View>
-            </View>
+          {/* REAL INTERACTIVE GOOGLE MAP CONTAINER */}
+          <View style={[isDesktop && styles.mapFlex]}>
+            <GoogleMapContainer
+              latitude={currentLat}
+              longitude={currentLng}
+              locationName={activeBooking?.location?.label || '📍 Wash Location'}
+              address={`${activeBooking?.location?.addressLine1 || 'Jalan Telawi 3, Bangsar'}, ${activeBooking?.location?.city || 'Kuala Lumpur'}`}
+              condoBuildingName={activeBooking?.location?.condoBuildingName}
+              unitParkingBay={activeBooking?.location?.unitParkingBay}
+              washerLatitude={isArrived ? currentLat : currentLat + 0.003}
+              washerLongitude={isArrived ? currentLng : currentLng + 0.004}
+              washerName="Amir Hazim (Detailer)"
+              height={380}
+              showOpenInAppBtn={true}
+            />
           </View>
 
           {/* WASHER & ORDER DETAILS CARD */}

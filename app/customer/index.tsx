@@ -12,7 +12,8 @@ export default function CustomerHomeScreen() {
     activeBooking, 
     draftService, setDraftService, 
     draftVehicle, setDraftVehicle,
-    draftLocation 
+    draftLocation,
+    isLocatingGps, fetchGpsLocation
   } = useBooking();
 
   const isDesktop = width >= 1024;
@@ -52,7 +53,14 @@ export default function CustomerHomeScreen() {
                 <Text style={{ fontSize: 18 }}>📍</Text>
               </View>
               <View style={{ flex: 1, marginLeft: 10 }}>
-                <Text style={styles.locHeaderTag}>WASH LOCATION</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={styles.locHeaderTag}>WASH LOCATION</Text>
+                  {draftLocation?.isRealGps && (
+                    <View style={{ backgroundColor: colors.successLight, paddingHorizontal: 6, paddingVertical: 2, borderRadius: borderRadius.xs }}>
+                      <Text style={{ color: colors.successDark, fontSize: 8, fontWeight: '900' }}>GPS ACTIVE 🟢</Text>
+                    </View>
+                  )}
+                </View>
                 <Text style={styles.locAddressText} numberOfLines={1}>
                   {draftLocation?.addressLine1 || 'Jalan Telawi 3, Bangsar'}, {draftLocation?.city || 'Kuala Lumpur'}
                 </Text>
@@ -62,11 +70,15 @@ export default function CustomerHomeScreen() {
                   </Text>
                 )}
               </View>
+
               <TouchableOpacity
-                style={styles.locChangeBtn}
-                onPress={() => router.push('/customer/book')}
+                style={styles.gpsLocateBtn}
+                onPress={() => fetchGpsLocation()}
+                disabled={isLocatingGps}
               >
-                <Text style={styles.locChangeBtnText}>Change</Text>
+                <Text style={styles.gpsLocateBtnText}>
+                  {isLocatingGps ? 'Locating...' : '📍 GPS Auto-Detect'}
+                </Text>
               </TouchableOpacity>
             </View>
 
@@ -582,6 +594,17 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 11,
     fontWeight: '800',
+  },
+  gpsLocateBtn: {
+    backgroundColor: colors.primaryLight,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: borderRadius.md,
+  },
+  gpsLocateBtnText: {
+    color: colors.primaryDark,
+    fontSize: 11,
+    fontWeight: '900',
   },
 
   garageSection: {

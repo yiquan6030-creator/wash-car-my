@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
+import * as Location from 'expo-location';
 import { 
   CustomerBooking, 
   BookingStatus, 
@@ -31,6 +32,8 @@ interface BookingContextType {
   setDraftVehicle: (vehicle: Vehicle) => void;
   draftLocation: LocationAddress;
   setDraftLocation: (location: LocationAddress) => void;
+  isLocatingGps: boolean;
+  fetchGpsLocation: () => Promise<LocationAddress | null>;
   draftBookingType: 'now' | 'scheduled';
   setDraftBookingType: (type: 'now' | 'scheduled') => void;
   scheduledDate: string;
@@ -67,11 +70,70 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [draftService, setDraftService] = useState<ServiceCategory>(SERVICE_CATEGORIES[1]); // Interior + Exterior
   const [draftVehicle, setDraftVehicle] = useState<Vehicle>(SAVED_VEHICLES[0]); // Myvi
   const [draftLocation, setDraftLocation] = useState<LocationAddress>(SAVED_LOCATIONS[0]);
+  const [isLocatingGps, setIsLocatingGps] = useState<boolean>(false);
   const [draftBookingType, setDraftBookingType] = useState<'now' | 'scheduled'>('now');
   const [scheduledDate, setScheduledDate] = useState('Tomorrow');
   const [scheduledTime, setScheduledTime] = useState('10:00 AM');
   const [selectedAddons, setSelectedAddons] = useState<ServiceAddon[]>([]);
   const [discountMYR, setDiscountMYR] = useState<number>(0);
+
+  const fetchGpsLocation = async (): Promise<LocationAddress | null> => {
+    try {
+      setIsLocatingGps(true);
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        alert('Permission to access location was denied. Please select a saved address.');
+        setIsLocatingGps(false);
+        return null;
+      }
+
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const { latitude, longitude } = pos.coords;
+
+      let addressLine1 = `GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+      let city = 'Kuala Lumpur';
+      let postcode = '50000';
+      let state = 'Kuala Lumpur';
+
+      try {
+        const geocoded = await Location.reverseGeocodeAsync({ latitude, longitude });
+        if (geocoded && geocoded.length > 0) {
+          const place = geocoded[0];
+          const street = place.street || place.name || place.district || 'Current Location';
+          const area = place.subregion || place.city || 'Kuala Lumpur';
+          addressLine1 = `${street}, ${area}`;
+          if (place.city) city = place.city;
+          if (place.postalCode) postcode = place.postalCode;
+          if (place.region) state = place.region;
+        }
+      } catch (e) {
+        console.log('Reverse geocoding info:', e);
+      }
+
+      const gpsLoc: LocationAddress = {
+        id: 'gps_' + Date.now(),
+        label: '📍 Real GPS Location',
+        addressLine1,
+        city,
+        postcode,
+        state,
+        latitude,
+        longitude,
+        isRealGps: true,
+        condoBuildingName: 'Live GPS Pin',
+        unitParkingBay: 'Parking Bay',
+        notesForWasher: `GPS Coordinates: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}. Please call when nearby.`,
+      };
+
+      setDraftLocation(gpsLoc);
+      setIsLocatingGps(false);
+      return gpsLoc;
+    } catch (error) {
+      console.error('Error fetching GPS location:', error);
+      setIsLocatingGps(false);
+      return null;
+    }
+  };
 
   // Washer State
   const [isWasherOnline, setIsWasherOnline] = useState<boolean>(true);
@@ -192,6 +254,8 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setDraftVehicle,
       draftLocation,
       setDraftLocation,
+      isLocatingGps,
+      fetchGpsLocation,
       draftBookingType,
       setDraftBookingType,
       scheduledDate,
