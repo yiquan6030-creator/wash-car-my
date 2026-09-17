@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useBooking } from '../../src/context/BookingContext';
 import { colors, spacing, borderRadius, shadows } from '../../src/theme';
@@ -13,6 +13,7 @@ import { Vehicle, LocationAddress, PaymentMethodType, VehicleTier } from '../../
 
 export default function MultiStepBookingScreen() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
   const { 
     draftService, setDraftService,
     draftVehicle, setDraftVehicle,
@@ -25,14 +26,13 @@ export default function MultiStepBookingScreen() {
     confirmBooking 
   } = useBooking();
 
+  const isDesktop = width >= 1024;
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [promoInput, setPromoInput] = useState<string>('');
   const [selectedPayment, setSelectedPayment] = useState<PaymentMethodType>('fpx');
-  
-  // Custom Location Notes Input
   const [washerNotes, setWasherNotes] = useState<string>('Basement B2, Bay #45. Please call when you arrive.');
   
-  // Vehicle Type selector for Add Vehicle modal preview
+  // Custom Vehicle Modal
   const [showAddVehicleModal, setShowAddVehicleModal] = useState<boolean>(false);
   const [newPlate, setNewPlate] = useState<string>('');
   const [newMakeModel, setNewMakeModel] = useState<string>('');
@@ -75,262 +75,381 @@ export default function MultiStepBookingScreen() {
     alert(`Added ${created.plateNumber} to garage!`);
   };
 
+  const stepsList = [
+    { num: 1, name: 'Service' },
+    { num: 2, name: 'Vehicle' },
+    { num: 3, name: 'Location' },
+    { num: 4, name: 'Timing' },
+    { num: 5, name: 'Add-ons' },
+    { num: 6, name: 'Checkout' },
+  ];
+
   return (
-    <View style={styles.container}>
-      {/* Stepper Navigation Header */}
-      <View style={styles.stepperHeader}>
-        <TouchableOpacity 
-          onPress={() => currentStep > 1 ? setCurrentStep(currentStep - 1) : router.back()}
-          style={styles.backBtn}
-        >
-          <Text style={styles.backText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.stepIndicator}>Step {currentStep} of 6</Text>
-      </View>
+    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <View style={[styles.mainWrapper, isDesktop && styles.mainWrapperDesktop]}>
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
-        
-        {/* STEP 1: CHOOSE SERVICE */}
-        {currentStep === 1 && (
-          <View style={styles.stepBox}>
-            <Text style={styles.stepTitle}>STEP 1: Choose Wash Service</Text>
-            <Text style={styles.stepSubtitle}>Select doorstep car wash package.</Text>
+        {/* STEPPER HEADER BAR */}
+        <View style={styles.stepperBar}>
+          <TouchableOpacity 
+            onPress={() => currentStep > 1 ? setCurrentStep(currentStep - 1) : router.back()}
+            style={styles.backBtn}
+          >
+            <Text style={styles.backText}>← Back</Text>
+          </TouchableOpacity>
 
-            {SERVICE_CATEGORIES.map((cat) => {
-              const isSelected = draftService.id === cat.id;
-              return (
-                <TouchableOpacity
-                  key={cat.id}
-                  style={[styles.cardSelect, isSelected && styles.cardSelected]}
-                  onPress={() => setDraftService(cat)}
-                  activeOpacity={0.8}
-                >
-                  <View style={styles.cardHeaderRow}>
-                    <Text style={styles.cardIcon}>{cat.icon}</Text>
-                    <View style={{ flex: 1, marginLeft: 10 }}>
-                      <Text style={styles.cardTitle}>{cat.name}</Text>
-                      <Text style={styles.cardSub}>{cat.tagline}</Text>
-                    </View>
-                    <Text style={styles.cardPrice}>RM{cat.startingPriceMYR}</Text>
-                  </View>
-                  <View style={styles.featureBox}>
-                    {cat.features.map((f, i) => (
-                      <Text key={i} style={styles.featureItem}>✓ {f}</Text>
-                    ))}
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-
-            <TouchableOpacity style={styles.nextBtn} onPress={() => setCurrentStep(2)}>
-              <Text style={styles.nextBtnText}>Continue to Choose Car →</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* STEP 2: CHOOSE CAR */}
-        {currentStep === 2 && (
-          <View style={styles.stepBox}>
-            <Text style={styles.stepTitle}>STEP 2: Choose Vehicle</Text>
-            <Text style={styles.stepSubtitle}>Select from saved garage or add new vehicle.</Text>
-
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <Text style={styles.subHeader}>Saved Vehicles</Text>
-              <TouchableOpacity onPress={() => setShowAddVehicleModal(!showAddVehicleModal)}>
-                <Text style={styles.addVehicleLink}>+ Add Vehicle</Text>
+          <View style={styles.stepsPillContainer}>
+            {stepsList.map((st) => (
+              <TouchableOpacity 
+                key={st.num}
+                style={[styles.stepPillItem, currentStep === st.num && styles.stepPillActive, currentStep > st.num && styles.stepPillDone]}
+                onPress={() => setCurrentStep(st.num)}
+              >
+                <Text style={[styles.stepPillNum, (currentStep >= st.num) && styles.stepPillNumActive]}>{st.num}</Text>
+                {isDesktop && (
+                  <Text style={[styles.stepPillName, (currentStep >= st.num) && styles.stepPillNameActive]}>{st.name}</Text>
+                )}
               </TouchableOpacity>
-            </View>
+            ))}
+          </View>
 
-            {showAddVehicleModal && (
-              <View style={styles.addVehicleBox}>
-                <Text style={styles.inputLabel}>Plate Number (e.g. VWB 8819):</Text>
-                <TextInput 
-                  style={styles.input} 
-                  placeholder="VWB 8819" 
-                  value={newPlate} 
-                  onChangeText={setNewPlate} 
-                  autoCapitalize="characters" 
-                />
+          <Text style={styles.stepIndicatorText}>Step {currentStep} / 6</Text>
+        </View>
 
-                <Text style={styles.inputLabel}>Make & Model (e.g. Perodua Myvi):</Text>
-                <TextInput 
-                  style={styles.input} 
-                  placeholder="Perodua Myvi" 
-                  value={newMakeModel} 
-                  onChangeText={setNewMakeModel} 
-                />
+        {/* SIDE-BY-SIDE DESKTOP / STACKED MOBILE GRID */}
+        <View style={[styles.bookingGrid, isDesktop && styles.bookingGridDesktop]}>
 
-                <Text style={styles.inputLabel}>Vehicle Type / Tier:</Text>
-                <View style={styles.tierGrid}>
-                  {(['hatchback', 'sedan', 'suv', 'mpv', 'pickup'] as VehicleTier[]).map((t) => (
-                    <TouchableOpacity
-                      key={t}
-                      style={[styles.tierBtn, selectedVehicleType === t && styles.tierBtnSelected]}
-                      onPress={() => setSelectedVehicleType(t)}
-                    >
-                      <Text style={[styles.tierBtnText, selectedVehicleType === t && styles.tierBtnTextSelected]}>
-                        {t.toUpperCase()}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+          {/* LEFT PANEL: STEP CONTENT */}
+          <View style={[styles.stepContentPanel, isDesktop && styles.leftPanelFlex]}>
+
+            {/* STEP 1: CHOOSE SERVICE */}
+            {currentStep === 1 && (
+              <View style={styles.stepBox}>
+                <Text style={styles.stepTitle}>STEP 1: Choose Wash Package</Text>
+                <Text style={styles.stepSubtitle}>Select doorstep car wash & detailing service.</Text>
+
+                <View style={styles.cardsList}>
+                  {SERVICE_CATEGORIES.map((cat) => {
+                    const isSelected = draftService.id === cat.id;
+                    return (
+                      <TouchableOpacity
+                        key={cat.id}
+                        style={[styles.cardSelect, isSelected && styles.cardSelected]}
+                        onPress={() => setDraftService(cat)}
+                        activeOpacity={0.88}
+                      >
+                        <View style={styles.cardHeaderRow}>
+                          <Text style={{ fontSize: 26 }}>{cat.icon}</Text>
+                          <View style={{ flex: 1, marginLeft: 12 }}>
+                            <Text style={styles.cardTitle}>{cat.name}</Text>
+                            <Text style={styles.cardSub}>{cat.tagline}</Text>
+                          </View>
+                          <View style={{ alignItems: 'flex-end' }}>
+                            <Text style={styles.cardPrice}>RM {cat.startingPriceMYR}</Text>
+                            <Text style={styles.cardDuration}>{cat.durationRange}</Text>
+                          </View>
+                        </View>
+
+                        <View style={styles.featureBox}>
+                          {cat.features.map((f, i) => (
+                            <Text key={i} style={styles.featureItem}>✓ {f}</Text>
+                          ))}
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
 
-                <TouchableOpacity style={styles.saveVehicleBtn} onPress={handleAddCustomVehicle}>
-                  <Text style={styles.saveVehicleText}>Save & Select Vehicle</Text>
+                <TouchableOpacity style={styles.nextBtn} onPress={() => setCurrentStep(2)}>
+                  <Text style={styles.nextBtnText}>Continue to Choose Vehicle →</Text>
                 </TouchableOpacity>
               </View>
             )}
 
-            {SAVED_VEHICLES.map((v) => {
-              const isSelected = draftVehicle.id === v.id;
-              return (
-                <TouchableOpacity
-                  key={v.id}
-                  style={[styles.cardSelect, isSelected && styles.cardSelected]}
-                  onPress={() => setDraftVehicle(v)}
-                >
-                  <View style={styles.cardHeaderRow}>
-                    <Text style={{ fontSize: 24 }}>🚗</Text>
-                    <View style={{ flex: 1, marginLeft: 10 }}>
-                      <Text style={styles.cardTitle}>{v.plateNumber}</Text>
-                      <Text style={styles.cardSub}>{v.make} {v.model} ({v.color})</Text>
+            {/* STEP 2: CHOOSE CAR */}
+            {currentStep === 2 && (
+              <View style={styles.stepBox}>
+                <Text style={styles.stepTitle}>STEP 2: Select Vehicle</Text>
+                <Text style={styles.stepSubtitle}>Choose from your saved garage or register a new vehicle.</Text>
+
+                <View style={styles.sectionTitleRow}>
+                  <Text style={styles.subHeader}>Saved Vehicles</Text>
+                  <TouchableOpacity onPress={() => setShowAddVehicleModal(!showAddVehicleModal)}>
+                    <Text style={styles.addVehicleLink}>+ Add New Car</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {showAddVehicleModal && (
+                  <View style={styles.addVehicleBox}>
+                    <Text style={styles.inputLabel}>Plate Number (e.g. VWB 8819):</Text>
+                    <TextInput 
+                      style={styles.input} 
+                      placeholder="VWB 8819" 
+                      value={newPlate} 
+                      onChangeText={setNewPlate} 
+                      autoCapitalize="characters" 
+                    />
+
+                    <Text style={styles.inputLabel}>Make & Model (e.g. Perodua Myvi):</Text>
+                    <TextInput 
+                      style={styles.input} 
+                      placeholder="Perodua Myvi" 
+                      value={newMakeModel} 
+                      onChangeText={setNewMakeModel} 
+                    />
+
+                    <Text style={styles.inputLabel}>Vehicle Type Tier:</Text>
+                    <View style={styles.tierGrid}>
+                      {(['hatchback', 'sedan', 'suv', 'mpv', 'pickup'] as VehicleTier[]).map((t) => (
+                        <TouchableOpacity
+                          key={t}
+                          style={[styles.tierBtn, selectedVehicleType === t && styles.tierBtnSelected]}
+                          onPress={() => setSelectedVehicleType(t)}
+                        >
+                          <Text style={[styles.tierBtnText, selectedVehicleType === t && styles.tierBtnTextSelected]}>
+                            {t.toUpperCase()}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
                     </View>
-                    <Text style={styles.tierTag}>{v.tier.toUpperCase()}</Text>
+
+                    <TouchableOpacity style={styles.saveVehicleBtn} onPress={handleAddCustomVehicle}>
+                      <Text style={styles.saveVehicleText}>Save Vehicle & Continue</Text>
+                    </TouchableOpacity>
                   </View>
+                )}
+
+                <View style={styles.cardsList}>
+                  {SAVED_VEHICLES.map((v) => {
+                    const isSelected = draftVehicle.id === v.id;
+                    return (
+                      <TouchableOpacity
+                        key={v.id}
+                        style={[styles.cardSelect, isSelected && styles.cardSelected]}
+                        onPress={() => setDraftVehicle(v)}
+                      >
+                        <View style={styles.cardHeaderRow}>
+                          <Text style={{ fontSize: 28 }}>🚗</Text>
+                          <View style={{ flex: 1, marginLeft: 12 }}>
+                            <Text style={styles.cardTitle}>{v.plateNumber}</Text>
+                            <Text style={styles.cardSub}>{v.make} {v.model} • {v.color}</Text>
+                          </View>
+                          <View style={styles.tierPillTag}>
+                            <Text style={styles.tierPillText}>{v.tier.toUpperCase()}</Text>
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                <TouchableOpacity style={styles.nextBtn} onPress={() => setCurrentStep(3)}>
+                  <Text style={styles.nextBtnText}>Continue to Location →</Text>
                 </TouchableOpacity>
-              );
-            })}
-
-            <TouchableOpacity style={styles.nextBtn} onPress={() => setCurrentStep(3)}>
-              <Text style={styles.nextBtnText}>Continue to Choose Location →</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* STEP 3: CHOOSE LOCATION */}
-        {currentStep === 3 && (
-          <View style={styles.stepBox}>
-            <Text style={styles.stepTitle}>STEP 3: Choose Location</Text>
-            <Text style={styles.stepSubtitle}>Select doorstep wash address and add parking notes.</Text>
-
-            {SAVED_LOCATIONS.map((loc) => {
-              const isSelected = draftLocation.id === loc.id;
-              return (
-                <TouchableOpacity
-                  key={loc.id}
-                  style={[styles.cardSelect, isSelected && styles.cardSelected]}
-                  onPress={() => setDraftLocation(loc)}
-                >
-                  <Text style={styles.cardTitle}>📍 {loc.label}</Text>
-                  <Text style={styles.cardSub}>{loc.addressLine1}, {loc.city}</Text>
-                  {loc.condoBuildingName && (
-                    <Text style={styles.condoText}>🏢 {loc.condoBuildingName} ({loc.unitParkingBay || 'N/A'})</Text>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-
-            {/* Custom Notes for Washer */}
-            <Text style={styles.subHeader}>Notes for Washer (Parking Bay / Lift Lobby):</Text>
-            <TextInput
-              style={styles.notesInput}
-              placeholder="e.g. Basement B2, Parked near lift lobby, Please call when you arrive"
-              value={washerNotes}
-              onChangeText={setWasherNotes}
-              multiline
-              numberOfLines={2}
-            />
-
-            <TouchableOpacity style={styles.nextBtn} onPress={() => setCurrentStep(4)}>
-              <Text style={styles.nextBtnText}>Continue to Booking Type →</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* STEP 4: CHOOSE BOOKING TYPE */}
-        {currentStep === 4 && (
-          <View style={styles.stepBox}>
-            <Text style={styles.stepTitle}>STEP 4: Wash Now or Schedule</Text>
-            <Text style={styles.stepSubtitle}>Immediate express wash or reserve a future slot.</Text>
-
-            <TouchableOpacity
-              style={[styles.cardSelect, draftBookingType === 'now' && styles.cardSelected]}
-              onPress={() => setDraftBookingType('now')}
-            >
-              <Text style={styles.cardTitle}>⚡ Wash Now (Express)</Text>
-              <Text style={styles.cardSub}>Find available nearby detailer arriving in 30 mins.</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.cardSelect, draftBookingType === 'scheduled' && styles.cardSelected]}
-              onPress={() => setDraftBookingType('scheduled')}
-            >
-              <Text style={styles.cardTitle}>📅 Schedule for Later</Text>
-              <Text style={styles.cardSub}>Select date & time slot for mobile wash.</Text>
-            </TouchableOpacity>
-
-            {draftBookingType === 'scheduled' && (
-              <View style={styles.scheduleBox}>
-                <Text style={styles.inputLabel}>Select Date:</Text>
-                <TextInput style={styles.input} value={scheduledDate} onChangeText={setScheduledDate} />
-                <Text style={styles.inputLabel}>Select Time Slot:</Text>
-                <TextInput style={styles.input} value={scheduledTime} onChangeText={setScheduledTime} />
               </View>
             )}
 
-            <TouchableOpacity style={styles.nextBtn} onPress={() => setCurrentStep(5)}>
-              <Text style={styles.nextBtnText}>Continue to Add-ons →</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+            {/* STEP 3: CHOOSE LOCATION */}
+            {currentStep === 3 && (
+              <View style={styles.stepBox}>
+                <Text style={styles.stepTitle}>STEP 3: Wash Location & Parking</Text>
+                <Text style={styles.stepSubtitle}>Specify address and parking bay details for the detailer.</Text>
 
-        {/* STEP 5: ADD-ONS */}
-        {currentStep === 5 && (
-          <View style={styles.stepBox}>
-            <Text style={styles.stepTitle}>STEP 5: Optional Add-ons</Text>
-            <Text style={styles.stepSubtitle}>Enhance your wash with specialized treatments.</Text>
+                <View style={styles.cardsList}>
+                  {SAVED_LOCATIONS.map((loc) => {
+                    const isSelected = draftLocation.id === loc.id;
+                    return (
+                      <TouchableOpacity
+                        key={loc.id}
+                        style={[styles.cardSelect, isSelected && styles.cardSelected]}
+                        onPress={() => setDraftLocation(loc)}
+                      >
+                        <Text style={styles.cardTitle}>📍 {loc.label}</Text>
+                        <Text style={styles.cardSub}>{loc.addressLine1}, {loc.city}, {loc.postcode}</Text>
+                        {loc.condoBuildingName && (
+                          <Text style={styles.condoText}>🏢 {loc.condoBuildingName} ({loc.unitParkingBay || 'N/A'})</Text>
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
 
-            {SERVICE_ADDONS.map((addon) => {
-              const isChecked = selectedAddons.some(a => a.id === addon.id);
-              return (
-                <TouchableOpacity
-                  key={addon.id}
-                  style={[styles.cardSelect, isChecked && styles.cardSelected]}
-                  onPress={() => toggleAddon(addon)}
-                >
-                  <View style={styles.cardHeaderRow}>
-                    <Text style={{ fontSize: 22 }}>{addon.icon}</Text>
-                    <View style={{ flex: 1, marginLeft: 10 }}>
-                      <Text style={styles.cardTitle}>{addon.name}</Text>
-                      <Text style={styles.cardSub}>{addon.description}</Text>
-                    </View>
-                    <Text style={styles.cardPrice}>+RM{addon.priceMYR}</Text>
-                  </View>
+                {/* Parking Bay Instructions */}
+                <Text style={styles.subHeader}>Parking Bay & Access Instructions:</Text>
+                <TextInput
+                  style={styles.notesInput}
+                  placeholder="e.g. Basement B2, Parked near lift lobby, Call upon arrival"
+                  value={washerNotes}
+                  onChangeText={setWasherNotes}
+                  multiline
+                  numberOfLines={3}
+                />
+
+                <TouchableOpacity style={styles.nextBtn} onPress={() => setCurrentStep(4)}>
+                  <Text style={styles.nextBtnText}>Continue to Timing →</Text>
                 </TouchableOpacity>
-              );
-            })}
+              </View>
+            )}
 
-            <TouchableOpacity style={styles.nextBtn} onPress={() => setCurrentStep(6)}>
-              <Text style={styles.nextBtnText}>Review Checkout →</Text>
-            </TouchableOpacity>
+            {/* STEP 4: CHOOSE BOOKING TYPE */}
+            {currentStep === 4 && (
+              <View style={styles.stepBox}>
+                <Text style={styles.stepTitle}>STEP 4: Wash Now or Reserve Slot</Text>
+                <Text style={styles.stepSubtitle}>Immediate express wash dispatch or schedule a future slot.</Text>
+
+                <TouchableOpacity
+                  style={[styles.cardSelect, draftBookingType === 'now' && styles.cardSelected]}
+                  onPress={() => setDraftBookingType('now')}
+                >
+                  <Text style={styles.cardTitle}>⚡ Express Wash Now (ASAP)</Text>
+                  <Text style={styles.cardSub}>Find available nearby detailer. Arrives in ~30 minutes.</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.cardSelect, draftBookingType === 'scheduled' && styles.cardSelected]}
+                  onPress={() => setDraftBookingType('scheduled')}
+                >
+                  <Text style={styles.cardTitle}>📅 Schedule Reserved Slot</Text>
+                  <Text style={styles.cardSub}>Reserve specific date & time slot for mobile detailing.</Text>
+                </TouchableOpacity>
+
+                {draftBookingType === 'scheduled' && (
+                  <View style={styles.scheduleBox}>
+                    <Text style={styles.inputLabel}>Select Preferred Date:</Text>
+                    <TextInput style={styles.input} value={scheduledDate} onChangeText={setScheduledDate} />
+                    <Text style={styles.inputLabel}>Select Preferred Time Slot:</Text>
+                    <TextInput style={styles.input} value={scheduledTime} onChangeText={setScheduledTime} />
+                  </View>
+                )}
+
+                <TouchableOpacity style={styles.nextBtn} onPress={() => setCurrentStep(5)}>
+                  <Text style={styles.nextBtnText}>Continue to Add-ons →</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* STEP 5: ADD-ONS */}
+            {currentStep === 5 && (
+              <View style={styles.stepBox}>
+                <Text style={styles.stepTitle}>STEP 5: Enhance with Add-ons</Text>
+                <Text style={styles.stepSubtitle}>Optional specialized treatments for ultimate shine.</Text>
+
+                <View style={styles.cardsList}>
+                  {SERVICE_ADDONS.map((addon) => {
+                    const isChecked = selectedAddons.some(a => a.id === addon.id);
+                    return (
+                      <TouchableOpacity
+                        key={addon.id}
+                        style={[styles.cardSelect, isChecked && styles.cardSelected]}
+                        onPress={() => toggleAddon(addon)}
+                      >
+                        <View style={styles.cardHeaderRow}>
+                          <Text style={{ fontSize: 26 }}>{addon.icon}</Text>
+                          <View style={{ flex: 1, marginLeft: 12 }}>
+                            <Text style={styles.cardTitle}>{addon.name}</Text>
+                            <Text style={styles.cardSub}>{addon.description}</Text>
+                          </View>
+                          <Text style={styles.cardPrice}>+RM {addon.priceMYR}</Text>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                <TouchableOpacity style={styles.nextBtn} onPress={() => setCurrentStep(6)}>
+                  <Text style={styles.nextBtnText}>Review & Proceed to Payment →</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* STEP 6: CHECKOUT & PAYMENT */}
+            {currentStep === 6 && (
+              <View style={styles.stepBox}>
+                <Text style={styles.stepTitle}>STEP 6: Checkout & Payment</Text>
+                <Text style={styles.stepSubtitle}>Review order summary and select payment method.</Text>
+
+                {/* Promo Code Input */}
+                <View style={styles.promoRow}>
+                  <TextInput
+                    style={styles.promoInput}
+                    placeholder="PROMO CODE (e.g. FIRSTWASH5)"
+                    value={promoInput}
+                    onChangeText={setPromoInput}
+                    autoCapitalize="characters"
+                  />
+                  <TouchableOpacity style={styles.applyBtn} onPress={handleApplyPromo}>
+                    <Text style={styles.applyBtnText}>Apply Promo</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Payment Gateway Options */}
+                <Text style={styles.subHeader}>Select Payment Method (Malaysia)</Text>
+                <View style={styles.paymentGrid}>
+                  <TouchableOpacity 
+                    style={[styles.payBtn, selectedPayment === 'fpx' && styles.payBtnSelected]} 
+                    onPress={() => setSelectedPayment('fpx')}
+                  >
+                    <Text style={styles.payText}>🏦 FPX Online Banking</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={[styles.payBtn, selectedPayment === 'duitnow' && styles.payBtnSelected]} 
+                    onPress={() => setSelectedPayment('duitnow')}
+                  >
+                    <Text style={styles.payText}>📲 DuitNow QR</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={[styles.payBtn, selectedPayment === 'tng_ewallet' && styles.payBtnSelected]} 
+                    onPress={() => setSelectedPayment('tng_ewallet')}
+                  >
+                    <Text style={styles.payText}>🟦 Touch 'n Go eWallet</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={[styles.payBtn, selectedPayment === 'card' && styles.payBtnSelected]} 
+                    onPress={() => setSelectedPayment('card')}
+                  >
+                    <Text style={styles.payText}>💳 Credit / Debit Card</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirmOrder} activeOpacity={0.9}>
+                  <Text style={styles.confirmBtnText}>Confirm Order & Pay (RM {grandTotal}) →</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
           </View>
-        )}
 
-        {/* STEP 6: CHECKOUT & PAYMENT */}
-        {currentStep === 6 && (
-          <View style={styles.stepBox}>
-            <Text style={styles.stepTitle}>STEP 6: Checkout & Payment</Text>
-            <Text style={styles.stepSubtitle}>Review summary and select payment method.</Text>
+          {/* RIGHT PANEL: STICKY ORDER SUMMARY SIDEBAR */}
+          <View style={[styles.summarySidebar, isDesktop && styles.rightPanelFlex]}>
+            <Text style={styles.summarySidebarTitle}>ORDER SUMMARY</Text>
 
-            <View style={styles.summaryCard}>
-              <View style={styles.summaryRow}><Text style={styles.sumLabel}>Service:</Text><Text style={styles.sumVal}>{draftService.name}</Text></View>
-              <View style={styles.summaryRow}><Text style={styles.sumLabel}>Vehicle:</Text><Text style={styles.sumVal}>{draftVehicle.plateNumber} ({draftVehicle.make} {draftVehicle.model})</Text></View>
-              <View style={styles.summaryRow}><Text style={styles.sumLabel}>Location:</Text><Text style={styles.sumVal}>{draftLocation.addressLine1}, {draftLocation.city}</Text></View>
-              <View style={styles.summaryRow}><Text style={styles.sumLabel}>Notes:</Text><Text style={styles.sumVal}>{washerNotes}</Text></View>
-              <View style={styles.summaryRow}><Text style={styles.sumLabel}>Timing:</Text><Text style={styles.sumVal}>{draftBookingType === 'now' ? 'Wash Now (ASAP)' : `${scheduledDate} ${scheduledTime}`}</Text></View>
-              
+            <View style={styles.summaryBox}>
+              <View style={styles.summaryItemRow}>
+                <Text style={styles.sumLabel}>Package:</Text>
+                <Text style={styles.sumVal}>{draftService.name}</Text>
+              </View>
+
+              <View style={styles.summaryItemRow}>
+                <Text style={styles.sumLabel}>Vehicle:</Text>
+                <Text style={styles.sumVal}>{draftVehicle.plateNumber} ({draftVehicle.make} {draftVehicle.model})</Text>
+              </View>
+
+              <View style={styles.summaryItemRow}>
+                <Text style={styles.sumLabel}>Location:</Text>
+                <Text style={styles.sumVal} numberOfLines={2}>{draftLocation.addressLine1}, {draftLocation.city}</Text>
+              </View>
+
+              <View style={styles.summaryItemRow}>
+                <Text style={styles.sumLabel}>Timing:</Text>
+                <Text style={styles.sumVal}>
+                  {draftBookingType === 'now' ? 'Wash Now (Express ~30m)' : `${scheduledDate} @ ${scheduledTime}`}
+                </Text>
+              </View>
+
               {selectedAddons.length > 0 && (
-                <View style={styles.summaryRow}>
+                <View style={styles.summaryItemRow}>
                   <Text style={styles.sumLabel}>Add-ons:</Text>
                   <Text style={styles.sumVal}>{selectedAddons.map(a => a.name).join(', ')}</Text>
                 </View>
@@ -338,122 +457,476 @@ export default function MultiStepBookingScreen() {
 
               <View style={styles.divider} />
 
-              <View style={styles.summaryRow}><Text style={styles.sumLabel}>Subtotal:</Text><Text style={styles.sumVal}>RM {subtotal}</Text></View>
-              <View style={styles.summaryRow}><Text style={styles.sumLabel}>Service Fee:</Text><Text style={styles.sumVal}>RM {serviceFee}</Text></View>
-              {discountMYR > 0 && (
-                <View style={styles.summaryRow}><Text style={styles.discountLabel}>Promo Discount:</Text><Text style={styles.discountVal}>-RM {discountMYR}</Text></View>
+              <View style={styles.summaryItemRow}>
+                <Text style={styles.sumLabel}>Package Price:</Text>
+                <Text style={styles.sumVal}>RM {draftService.startingPriceMYR}.00</Text>
+              </View>
+
+              {addonsTotal > 0 && (
+                <View style={styles.summaryItemRow}>
+                  <Text style={styles.sumLabel}>Add-ons Total:</Text>
+                  <Text style={styles.sumVal}>+RM {addonsTotal}.00</Text>
+                </View>
               )}
-              <View style={styles.summaryRow}><Text style={styles.totalLabel}>Total Payable:</Text><Text style={styles.totalVal}>RM {grandTotal}</Text></View>
-            </View>
 
-            {/* Promo Code Entry */}
-            <View style={styles.promoRow}>
-              <TextInput
-                style={styles.promoInput}
-                placeholder="PROMO CODE (e.g. FIRSTWASH5)"
-                value={promoInput}
-                onChangeText={setPromoInput}
-                autoCapitalize="characters"
-              />
-              <TouchableOpacity style={styles.applyBtn} onPress={handleApplyPromo}>
-                <Text style={styles.applyBtnText}>Apply</Text>
-              </TouchableOpacity>
-            </View>
+              <View style={styles.summaryItemRow}>
+                <Text style={styles.sumLabel}>Service Fee:</Text>
+                <Text style={styles.sumVal}>RM {serviceFee}.00</Text>
+              </View>
 
-            {/* Payment Method Selector */}
-            <Text style={styles.subHeader}>Payment Method (Malaysia)</Text>
-            <View style={styles.paymentGrid}>
-              <TouchableOpacity 
-                style={[styles.payBtn, selectedPayment === 'fpx' && styles.payBtnSelected]} 
-                onPress={() => setSelectedPayment('fpx')}
-              >
-                <Text style={styles.payText}>🏦 FPX</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.payBtn, selectedPayment === 'duitnow' && styles.payBtnSelected]} 
-                onPress={() => setSelectedPayment('duitnow')}
-              >
-                <Text style={styles.payText}>📲 DuitNow</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.payBtn, selectedPayment === 'card' && styles.payBtnSelected]} 
-                onPress={() => setSelectedPayment('card')}
-              >
-                <Text style={styles.payText}>💳 Card</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.payBtn, selectedPayment === 'tng_ewallet' && styles.payBtnSelected]} 
-                onPress={() => setSelectedPayment('tng_ewallet')}
-              >
-                <Text style={styles.payText}>🟦 TNG Wallet</Text>
-              </TouchableOpacity>
-            </View>
+              {discountMYR > 0 && (
+                <View style={styles.summaryItemRow}>
+                  <Text style={styles.discountLabel}>Promo Discount:</Text>
+                  <Text style={styles.discountVal}>-RM {discountMYR}.00</Text>
+                </View>
+              )}
 
-            <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirmOrder} activeOpacity={0.9}>
-              <Text style={styles.confirmBtnText}>Confirm & Pay (RM {grandTotal}) →</Text>
-            </TouchableOpacity>
+              <View style={styles.totalDivider} />
+
+              <View style={styles.summaryItemRow}>
+                <Text style={styles.totalPayableLabel}>Total Payable</Text>
+                <Text style={styles.totalPayableValue}>RM {grandTotal}</Text>
+              </View>
+            </View>
           </View>
-        )}
 
-      </ScrollView>
-    </View>
+        </View>
+
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.backgroundLight },
-  stepperHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.md, backgroundColor: '#ffffff', borderBottomWidth: 1, borderBottomColor: colors.borderLight },
-  backBtn: { paddingVertical: 4, paddingHorizontal: 8 },
-  backText: { color: colors.textMuted, fontWeight: '800', fontSize: 13 },
-  stepIndicator: { fontSize: 12, fontWeight: '900', color: colors.primaryBlue },
-  content: { padding: spacing.lg, paddingBottom: 40 },
-  stepBox: { marginBottom: 12 },
-  stepTitle: { fontSize: 20, fontWeight: '900', color: colors.textDark },
-  stepSubtitle: { fontSize: 12, color: colors.textMuted, marginBottom: spacing.md },
-  subHeader: { fontSize: 13, fontWeight: '800', color: colors.textDark, marginTop: spacing.md, marginBottom: 6 },
-  addVehicleLink: { fontSize: 12, fontWeight: '800', color: colors.primaryBlue },
-  addVehicleBox: { backgroundColor: '#ffffff', padding: spacing.md, borderRadius: borderRadius.lg, borderWidth: 1, borderColor: colors.primaryBlue, marginBottom: spacing.md, ...shadows.soft },
-  tierGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginVertical: 8 },
-  tierBtn: { backgroundColor: colors.backgroundLight, paddingHorizontal: 10, paddingVertical: 6, borderRadius: borderRadius.sm, borderWidth: 1, borderColor: colors.borderLight },
-  tierBtnSelected: { backgroundColor: colors.primaryBlue, borderColor: colors.primaryBlue },
-  tierBtnText: { fontSize: 10, fontWeight: '800', color: colors.textDark },
-  tierBtnTextSelected: { color: '#ffffff' },
-  saveVehicleBtn: { backgroundColor: colors.primaryBlue, paddingVertical: 10, borderRadius: borderRadius.sm, alignItems: 'center', marginTop: 8 },
-  saveVehicleText: { color: '#ffffff', fontWeight: '800', fontSize: 12 },
-  cardSelect: { backgroundColor: '#ffffff', borderRadius: borderRadius.lg, padding: spacing.md, marginBottom: spacing.md, borderWidth: 1, borderColor: colors.borderLight, ...shadows.soft },
-  cardSelected: { borderColor: colors.primaryBlue, borderWidth: 2, backgroundColor: colors.primaryLight },
-  cardHeaderRow: { flexDirection: 'row', alignItems: 'center' },
-  cardIcon: { fontSize: 24 },
-  cardTitle: { fontSize: 15, fontWeight: '800', color: colors.textDark },
-  cardSub: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
-  cardPrice: { fontSize: 15, fontWeight: '900', color: colors.primaryBlue },
-  tierTag: { fontSize: 9, fontWeight: '800', backgroundColor: colors.borderLight, color: colors.textDark, paddingHorizontal: 6, paddingVertical: 2, borderRadius: borderRadius.sm },
-  featureBox: { marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: colors.borderLight },
-  featureItem: { fontSize: 11, color: colors.textDark, marginBottom: 2 },
-  condoText: { fontSize: 11, color: colors.primaryDark, marginTop: 4, fontWeight: '700' },
-  notesInput: { backgroundColor: '#ffffff', borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.borderLight, padding: spacing.md, fontSize: 12, color: colors.textDark, textAlignVertical: 'top', marginBottom: spacing.md },
-  nextBtn: { backgroundColor: colors.primaryBlue, paddingVertical: 14, borderRadius: borderRadius.md, alignItems: 'center', marginTop: spacing.md },
-  nextBtnText: { color: '#ffffff', fontWeight: '900', fontSize: 15 },
-  scheduleBox: { backgroundColor: '#ffffff', padding: spacing.md, borderRadius: borderRadius.md, marginBottom: spacing.md },
-  inputLabel: { fontSize: 11, fontWeight: '800', color: colors.textMuted, marginBottom: 2 },
-  input: { backgroundColor: colors.backgroundLight, borderRadius: borderRadius.sm, borderWidth: 1, borderColor: colors.borderLight, padding: 8, fontSize: 13, marginBottom: 8 },
-  summaryCard: { backgroundColor: '#ffffff', borderRadius: borderRadius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.borderLight, marginBottom: spacing.md, ...shadows.soft },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  sumLabel: { fontSize: 12, color: colors.textMuted },
-  sumVal: { fontSize: 12, fontWeight: '800', color: colors.textDark, width: '60%', textAlign: 'right' },
-  discountLabel: { fontSize: 12, color: colors.successGreen, fontWeight: '800' },
-  discountVal: { fontSize: 12, color: colors.successGreen, fontWeight: '900' },
-  totalLabel: { fontSize: 15, fontWeight: '900', color: colors.textDark },
-  totalVal: { fontSize: 20, fontWeight: '900', color: colors.primaryBlue },
-  divider: { height: 1, backgroundColor: colors.borderLight, marginVertical: 8 },
-  promoRow: { flexDirection: 'row', gap: 8, marginBottom: spacing.md },
-  promoInput: { flex: 1, backgroundColor: '#ffffff', borderRadius: borderRadius.sm, borderWidth: 1, borderColor: colors.borderLight, paddingHorizontal: 10, fontSize: 12, fontWeight: '800' },
-  applyBtn: { backgroundColor: colors.brandNavy, paddingHorizontal: 16, borderRadius: borderRadius.sm, justifyContent: 'center' },
-  applyBtnText: { color: '#ffffff', fontWeight: '800', fontSize: 12 },
-  paymentGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: spacing.lg },
-  payBtn: { width: '48%', backgroundColor: '#ffffff', paddingVertical: 12, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.borderLight, alignItems: 'center' },
-  payBtnSelected: { borderColor: colors.primaryBlue, borderWidth: 2, backgroundColor: colors.primaryLight },
-  payText: { fontSize: 13, fontWeight: '800', color: colors.textDark },
-  confirmBtn: { backgroundColor: colors.successGreen, paddingVertical: 16, borderRadius: borderRadius.md, alignItems: 'center' },
-  confirmBtnText: { color: '#ffffff', fontWeight: '900', fontSize: 16 },
+  container: {
+    flex: 1,
+    backgroundColor: colors.backgroundLight,
+  },
+  scrollContent: {
+    paddingBottom: 60,
+  },
+  mainWrapper: {
+    padding: spacing.lg,
+  },
+  mainWrapperDesktop: {
+    maxWidth: 1360,
+    alignSelf: 'center',
+    width: '100%',
+    paddingVertical: spacing.xl,
+  },
+
+  // Stepper Header
+  stepperBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: colors.surfaceWhite,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    marginBottom: spacing.lg,
+    ...shadows.soft,
+  },
+  backBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  backText: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  stepsPillContainer: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  stepPillItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.surfaceElevated,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: borderRadius.pill,
+  },
+  stepPillActive: {
+    backgroundColor: colors.primaryBlue,
+  },
+  stepPillDone: {
+    backgroundColor: colors.successGreen,
+  },
+  stepPillNum: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: colors.textMuted,
+  },
+  stepPillNumActive: {
+    color: '#ffffff',
+  },
+  stepPillName: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textMuted,
+  },
+  stepPillNameActive: {
+    color: '#ffffff',
+  },
+  stepIndicatorText: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: colors.primaryBlue,
+  },
+
+  // Booking Grid
+  bookingGrid: {
+    flexDirection: 'column',
+    gap: spacing.lg,
+  },
+  bookingGridDesktop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  leftPanelFlex: {
+    flex: 7,
+  },
+  rightPanelFlex: {
+    flex: 3,
+  },
+
+  stepContentPanel: {
+    backgroundColor: colors.surfaceWhite,
+    borderRadius: borderRadius.xl,
+    padding: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    ...shadows.medium,
+  },
+
+  stepBox: {},
+  stepTitle: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: colors.brandNavy,
+    marginBottom: 4,
+  },
+  stepSubtitle: {
+    fontSize: 13,
+    color: colors.textMuted,
+    marginBottom: spacing.lg,
+  },
+
+  cardsList: {
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  cardSelect: {
+    backgroundColor: colors.surfaceWhite,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    ...shadows.subtle,
+  },
+  cardSelected: {
+    borderColor: colors.primaryBlue,
+    borderWidth: 2,
+    backgroundColor: colors.primaryLight,
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  cardTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: colors.textDark,
+  },
+  cardSub: {
+    fontSize: 11,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  cardPrice: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: colors.primaryBlue,
+  },
+  cardDuration: {
+    fontSize: 10,
+    color: colors.textMuted,
+    marginTop: 1,
+  },
+
+  featureBox: {
+    marginTop: 10,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight,
+    gap: 4,
+  },
+  featureItem: {
+    fontSize: 11,
+    color: colors.textDark,
+  },
+
+  sectionTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  subHeader: {
+    fontSize: 12,
+    fontWeight: '900',
+    color: colors.brandNavy,
+    letterSpacing: 0.5,
+  },
+  addVehicleLink: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: colors.primaryBlue,
+  },
+  tierPillTag: {
+    backgroundColor: colors.surfaceElevated,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: borderRadius.xs,
+  },
+  tierPillText: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: colors.textDark,
+  },
+
+  addVehicleBox: {
+    backgroundColor: colors.surfaceElevated,
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.primaryBlue,
+    marginBottom: spacing.lg,
+  },
+  inputLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: colors.textMuted,
+    marginBottom: 4,
+  },
+  input: {
+    backgroundColor: colors.surfaceWhite,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 13,
+    color: colors.textDark,
+    marginBottom: 10,
+  },
+  tierGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 10,
+  },
+  tierBtn: {
+    backgroundColor: colors.surfaceWhite,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: borderRadius.xs,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  },
+  tierBtnSelected: {
+    backgroundColor: colors.primaryBlue,
+    borderColor: colors.primaryBlue,
+  },
+  tierBtnText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: colors.textDark,
+  },
+  tierBtnTextSelected: {
+    color: '#ffffff',
+  },
+  saveVehicleBtn: {
+    backgroundColor: colors.primaryBlue,
+    paddingVertical: 10,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+  },
+  saveVehicleText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '900',
+  },
+
+  condoText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.primaryDark,
+    marginTop: 4,
+  },
+  notesInput: {
+    backgroundColor: colors.surfaceWhite,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    padding: spacing.md,
+    fontSize: 12,
+    color: colors.textDark,
+    textAlignVertical: 'top',
+    marginBottom: spacing.lg,
+  },
+
+  scheduleBox: {
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginTop: spacing.md,
+  },
+
+  promoRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: spacing.lg,
+  },
+  promoInput: {
+    flex: 1,
+    backgroundColor: colors.surfaceWhite,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    paddingHorizontal: 12,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  applyBtn: {
+    backgroundColor: colors.brandNavy,
+    paddingHorizontal: 16,
+    borderRadius: borderRadius.md,
+    justifyContent: 'center',
+  },
+  applyBtnText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+
+  paymentGrid: {
+    flexDirection: 'column',
+    gap: 8,
+    marginVertical: 10,
+    marginBottom: spacing.xl,
+  },
+  payBtn: {
+    backgroundColor: colors.surfaceWhite,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  },
+  payBtnSelected: {
+    borderColor: colors.primaryBlue,
+    borderWidth: 2,
+    backgroundColor: colors.primaryLight,
+  },
+  payText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: colors.textDark,
+  },
+
+  nextBtn: {
+    backgroundColor: colors.primaryBlue,
+    paddingVertical: 14,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    ...shadows.soft,
+  },
+  nextBtnText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  confirmBtn: {
+    backgroundColor: colors.successGreen,
+    paddingVertical: 16,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    ...shadows.medium,
+  },
+  confirmBtnText: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '900',
+  },
+
+  // Summary Sidebar
+  summarySidebar: {
+    backgroundColor: colors.surfaceWhite,
+    borderRadius: borderRadius.xl,
+    padding: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    ...shadows.medium,
+  },
+  summarySidebarTitle: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: colors.brandNavy,
+    letterSpacing: 0.8,
+    marginBottom: spacing.md,
+  },
+  summaryBox: {
+    gap: 8,
+  },
+  summaryItemRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  sumLabel: {
+    fontSize: 12,
+    color: colors.textMuted,
+  },
+  sumVal: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: colors.textDark,
+    textAlign: 'right',
+    maxWidth: '60%',
+  },
+  discountLabel: {
+    fontSize: 12,
+    color: colors.successGreen,
+    fontWeight: '800',
+  },
+  discountVal: {
+    fontSize: 12,
+    color: colors.successGreen,
+    fontWeight: '900',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.borderLight,
+    marginVertical: 4,
+  },
+  totalDivider: {
+    height: 1.5,
+    backgroundColor: colors.brandNavy,
+    marginVertical: 6,
+  },
+  totalPayableLabel: {
+    fontSize: 15,
+    fontWeight: '900',
+    color: colors.brandNavy,
+  },
+  totalPayableValue: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: colors.primaryBlue,
+  },
 });

@@ -1,10 +1,17 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
+import { colors, shadows } from '../theme';
 
 export default function BottomTabBar() {
   const router = useRouter();
   const pathname = usePathname();
+  const { width } = useWindowDimensions();
+
+  // Hide mobile bottom navigation bar on desktop/tablet views (width >= 768px)
+  if (width >= 768) {
+    return null;
+  }
 
   const isWasherMode = pathname.startsWith('/washer');
 
@@ -27,6 +34,7 @@ export default function BottomTabBar() {
               key={tab.id}
               style={styles.tabItem}
               onPress={() => router.push(tab.path as any)}
+              activeOpacity={0.8}
             >
               <Text style={styles.tabIcon}>{tab.icon}</Text>
               <Text style={[styles.tabLabel, isActive && styles.tabLabelActiveWasher]}>
@@ -57,6 +65,7 @@ export default function BottomTabBar() {
             key={tab.id}
             style={styles.tabItem}
             onPress={() => router.push(tab.path as any)}
+            activeOpacity={0.8}
           >
             <Text style={styles.tabIcon}>{tab.icon}</Text>
             <Text style={[styles.tabLabel, isActive && styles.tabLabelActiveCustomer]}>
@@ -74,34 +83,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#ffffff',
     borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
-    paddingVertical: 8,
-    paddingBottom: 12,
+    borderTopColor: colors.borderLight,
+    paddingVertical: 10,
+    paddingBottom: 16,
     justifyContent: 'space-around',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
+    ...shadows.medium,
   },
   tabItem: {
     alignItems: 'center',
     flex: 1,
   },
   tabIcon: {
-    fontSize: 18,
-    marginBottom: 2,
+    fontSize: 19,
+    marginBottom: 3,
   },
   tabLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
     color: '#64748b',
   },
   tabLabelActiveCustomer: {
-    color: '#0284c7',
-    fontWeight: '800',
+    color: colors.primaryBlue,
+    fontWeight: '900',
   },
   tabLabelActiveWasher: {
-    color: '#16a34a',
-    fontWeight: '800',
+    color: colors.washerAccent,
+    fontWeight: '900',
   },
 });
+

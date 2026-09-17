@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, useWindowDimensions, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useBooking } from '../../src/context/BookingContext';
 import { colors, spacing, borderRadius, shadows } from '../../src/theme';
@@ -7,10 +7,12 @@ import { SAMPLE_WASHER } from '../../src/services/mockData';
 
 export default function LiveTrackingScreen() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
   const { activeBooking, updateBookingStatus } = useBooking();
   const [demoArrival, setDemoArrival] = useState(false);
 
-  const isArrived = demoArrival || activeBooking?.status === 'arrived' || activeBooking?.status === 'washing';
+  const isDesktop = width >= 1024;
+  const isArrived = demoArrival || activeBooking?.status === 'arrived' || activeBooking?.status === 'washing' || activeBooking?.status === 'completed';
 
   const handleSimulateArrival = () => {
     setDemoArrival(true);
@@ -19,173 +21,466 @@ export default function LiveTrackingScreen() {
 
   return (
     <View style={styles.container}>
-      {/* 1. TOP STATUS BANNER */}
-      <View style={styles.topBanner}>
-        <View style={styles.statusRow}>
-          <Text style={styles.statusBadgeIcon}>{isArrived ? '📍' : '🛵'}</Text>
-          <View>
-            <Text style={styles.bannerTitle}>
-              {isArrived ? 'Your washer has arrived!' : 'Amir is heading to you'}
-            </Text>
-            <Text style={styles.bannerSub}>
-              {isArrived ? 'Please ensure vehicle is accessible at Bay B2' : 'ETA: 8 mins • 2.1 km away'}
-            </Text>
-          </View>
-        </View>
-        <TouchableOpacity style={styles.demoSimBtn} onPress={handleSimulateArrival}>
-          <Text style={styles.demoSimText}>{isArrived ? 'Arrived ✓' : 'Simulate Arrival'}</Text>
-        </TouchableOpacity>
-      </View>
+      <View style={[styles.mainWrapper, isDesktop && styles.mainWrapperDesktop]}>
 
-      {/* 2. MAP CANVAS (Simulated Clean Vector Map) */}
-      <View style={styles.mapCanvas}>
-        {/* Grid / Roads Graphic */}
-        <View style={styles.roadHorizontal} />
-        <View style={styles.roadVertical} />
-        <View style={styles.roadDiagonal} />
-
-        {/* Customer Location Pin */}
-        <View style={[styles.markerBox, styles.customerMarker]}>
-          <Text style={styles.markerPin}>📍</Text>
-          <View style={styles.markerBubble}>
-            <Text style={styles.markerBubbleText}>My Location (Bangsar)</Text>
+        {/* TOP STATUS HEADER BAR */}
+        <View style={styles.statusHeaderBar}>
+          <View style={styles.statusHeaderLeft}>
+            <View style={[styles.statusIconCircle, isArrived && styles.statusIconCircleArrived]}>
+              <Text style={{ fontSize: 22 }}>{isArrived ? '📍' : '🛵'}</Text>
+            </View>
+            <View>
+              <Text style={styles.statusTitleText}>
+                {isArrived ? 'Detailer Has Arrived at Your Location' : 'Amir Hazim is Heading to Your Location'}
+              </Text>
+              <Text style={styles.statusSubText}>
+                {isArrived ? 'Please ensure vehicle is unlocked or accessible at Bay B2-#45' : 'Estimated Arrival: 8 mins • 2.1 km away • Speed: 35 km/h'}
+              </Text>
+            </View>
           </View>
+
+          <TouchableOpacity style={styles.simBtn} onPress={handleSimulateArrival}>
+            <Text style={styles.simBtnText}>{isArrived ? 'Arrived ✓' : '⚡ Simulate Arrival'}</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Route Line */}
-        <View style={styles.routeLine} />
+        {/* MAP & WASHER PROFILE GRID */}
+        <View style={[styles.gridContainer, isDesktop && styles.gridContainerDesktop]}>
 
-        {/* Washer Live Marker */}
-        <View style={[styles.markerBox, isArrived ? styles.washerArrivedMarker : styles.washerMarker]}>
-          <Text style={styles.markerIcon}>🛵</Text>
-          <View style={styles.washerBubble}>
-            <Text style={styles.washerBubbleText}>Amir (Detailer)</Text>
-          </View>
-        </View>
-      </View>
+          {/* SIMULATED VECTOR MAP CANVAS */}
+          <View style={[styles.mapContainerCard, isDesktop && styles.mapFlex]}>
+            <View style={styles.mapGraphicCanvas}>
+              {/* Roads & Blocks */}
+              <View style={styles.roadH1} />
+              <View style={styles.roadH2} />
+              <View style={styles.roadV1} />
+              <View style={styles.buildingBlock1} />
+              <View style={styles.buildingBlock2} />
+              <View style={styles.buildingBlock3} />
 
-      {/* 3. BOTTOM FLOATING WASHER CARD */}
-      <View style={styles.bottomCard}>
-        {/* Washer Profile Header */}
-        <View style={styles.washerRow}>
-          <Image source={{ uri: SAMPLE_WASHER.avatarUrl }} style={styles.avatar} />
-          <View style={{ flex: 1, marginLeft: 12 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Text style={styles.washerName}>Amir</Text>
-              <View style={styles.ratingPill}>
-                <Text style={styles.ratingText}>★ 4.9 Washer</Text>
+              {/* Destination Marker */}
+              <View style={[styles.markerPinBox, styles.destPinPos]}>
+                <View style={styles.destPinBubble}>
+                  <Text style={styles.destPinBubbleText}>📍 Wash Location (Bangsar)</Text>
+                </View>
+                <View style={styles.pinDotRed} />
+              </View>
+
+              {/* Route Path Line */}
+              <View style={styles.routePathLine} />
+
+              {/* Washer Live Marker */}
+              <View style={[styles.markerPinBox, isArrived ? styles.washerArrivedPos : styles.washerEnRoutePos]}>
+                <Text style={{ fontSize: 32 }}>🛵</Text>
+                <View style={styles.washerBubbleTag}>
+                  <Text style={styles.washerBubbleText}>Amir Hazim (Detailer)</Text>
+                </View>
               </View>
             </View>
-            <Text style={styles.vehicleInfo}>
-              Perodua Myvi • <Text style={styles.plateText}>VWB 8819</Text>
-            </Text>
           </View>
+
+          {/* WASHER & ORDER DETAILS CARD */}
+          <View style={[styles.detailsCardPanel, isDesktop && styles.detailsFlex]}>
+            
+            {/* Detailer Profile Header */}
+            <View style={styles.washerProfileRow}>
+              <Image source={{ uri: SAMPLE_WASHER.avatarUrl }} style={styles.washerAvatarImage} />
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={styles.washerName}>Amir Hazim</Text>
+                  <View style={styles.ratingBadgePill}>
+                    <Text style={styles.ratingBadgeText}>★ 4.95</Text>
+                  </View>
+                </View>
+                <Text style={styles.washerVehicleText}>
+                  Perodua Myvi • <Text style={styles.boldText}>VWB 8819</Text>
+                </Text>
+                <Text style={styles.equipmentText}>
+                  🎒 Rig Mounted Eco-Wash Unit
+                </Text>
+              </View>
+            </View>
+
+            {/* Service Summary Box */}
+            <View style={styles.summaryBox}>
+              <Text style={styles.summaryHeaderTag}>ACTIVE ORDER SUMMARY</Text>
+              
+              <View style={styles.sumRow}>
+                <Text style={styles.sumLabel}>Order ID:</Text>
+                <Text style={styles.sumValue}>#{activeBooking?.id || 'MY-882194'}</Text>
+              </View>
+
+              <View style={styles.sumRow}>
+                <Text style={styles.sumLabel}>Wash Package:</Text>
+                <Text style={styles.sumValue}>{activeBooking?.service?.name || 'Interior + Exterior Eco Wash'}</Text>
+              </View>
+
+              <View style={styles.sumRow}>
+                <Text style={styles.sumLabel}>Vehicle:</Text>
+                <Text style={styles.sumValue}>{activeBooking?.vehicle?.plateNumber || 'VWB 8819'} ({activeBooking?.vehicle?.make || 'Perodua'} {activeBooking?.vehicle?.model || 'Myvi'})</Text>
+              </View>
+
+              <View style={styles.sumRow}>
+                <Text style={styles.sumLabel}>Parking Bay:</Text>
+                <Text style={styles.sumValue}>Jalan Telawi 3 • Bay B2-#45</Text>
+              </View>
+
+              <View style={styles.sumRow}>
+                <Text style={styles.sumLabel}>Total Paid:</Text>
+                <Text style={styles.totalPaidText}>RM {activeBooking?.totalMYR || 50}.00</Text>
+              </View>
+            </View>
+
+            {/* Action Buttons */}
+            <View style={styles.actionsRow}>
+              <TouchableOpacity
+                style={styles.chatActionBtn}
+                onPress={() => router.push('/customer/messages')}
+              >
+                <Text style={styles.chatActionBtnText}>💬 Chat with Detailer</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.callActionBtn}
+                onPress={() => alert('Calling Amir Hazim at +60 12-345 6789...')}
+              >
+                <Text style={styles.callActionBtnText}>📞 Call Detailer</Text>
+              </TouchableOpacity>
+            </View>
+
+          </View>
+
         </View>
 
-        {/* Service Details Breakdown */}
-        <View style={styles.orderSummaryBox}>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Service:</Text>
-            <Text style={styles.summaryValue}>{activeBooking?.service?.name || 'Interior + Exterior'}</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Address:</Text>
-            <Text style={styles.summaryValue} numberOfLines={1}>Jalan Telawi 3, Bangsar (B2, Bay #45)</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Total Paid:</Text>
-            <Text style={styles.totalPrice}>RM {activeBooking?.totalMYR || 48}.00</Text>
-          </View>
-        </View>
-
-        {/* Action Buttons: Chat & Call */}
-        <View style={styles.actionBtnRow}>
-          <TouchableOpacity 
-            style={styles.chatBtn}
-            onPress={() => router.push('/customer/messages')}
-          >
-            <Text style={styles.chatBtnText}>💬 Chat</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.callBtn}
-            onPress={() => alert('Calling Amir at +60 12-345 6789...')}
-          >
-            <Text style={styles.callBtnText}>📞 Call Amir</Text>
-          </TouchableOpacity>
-        </View>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#e2e8f0' },
-  topBanner: {
-    position: 'absolute',
-    top: 12,
-    left: 16,
-    right: 16,
-    zIndex: 10,
-    backgroundColor: '#ffffff',
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    ...shadows.medium,
+  container: {
+    flex: 1,
+    backgroundColor: colors.backgroundLight,
   },
-  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
-  statusBadgeIcon: { fontSize: 22 },
-  bannerTitle: { fontSize: 14, fontWeight: '900', color: colors.textDark },
-  bannerSub: { fontSize: 11, color: colors.textMuted, marginTop: 1 },
-  demoSimBtn: { backgroundColor: colors.primaryLight, paddingHorizontal: 10, paddingVertical: 6, borderRadius: borderRadius.sm },
-  demoSimText: { fontSize: 10, fontWeight: '800', color: colors.primaryDark },
-  mapCanvas: { flex: 1, backgroundColor: '#f1f5f9', position: 'relative' },
-  roadHorizontal: { position: 'absolute', top: '45%', left: 0, right: 0, height: 30, backgroundColor: '#e2e8f0' },
-  roadVertical: { position: 'absolute', left: '50%', top: 0, bottom: 0, width: 30, backgroundColor: '#e2e8f0' },
-  roadDiagonal: { position: 'absolute', top: '20%', left: 0, right: 0, height: 16, backgroundColor: '#cbd5e1', transform: [{ rotate: '-25deg' }] },
-  markerBox: { position: 'absolute', alignItems: 'center', zIndex: 5 },
-  customerMarker: { top: '35%', left: '25%' },
-  markerPin: { fontSize: 32 },
-  markerBubble: { backgroundColor: colors.brandNavy, paddingHorizontal: 8, paddingVertical: 4, borderRadius: borderRadius.sm, marginTop: -4 },
-  markerBubbleText: { color: '#ffffff', fontSize: 10, fontWeight: '800' },
-  routeLine: { position: 'absolute', top: '38%', left: '32%', width: 120, height: 4, backgroundColor: colors.primaryBlue, borderRadius: 2, transform: [{ rotate: '35deg' }] },
-  washerMarker: { top: '55%', left: '60%' },
-  washerArrivedMarker: { top: '38%', left: '32%' },
-  markerIcon: { fontSize: 28 },
-  washerBubble: { backgroundColor: colors.successGreen, paddingHorizontal: 8, paddingVertical: 4, borderRadius: borderRadius.sm, marginTop: -4 },
-  washerBubbleText: { color: '#ffffff', fontSize: 10, fontWeight: '800' },
-  bottomCard: {
-    position: 'absolute',
-    bottom: 16,
-    left: 16,
-    right: 16,
-    zIndex: 10,
-    backgroundColor: '#ffffff',
+  mainWrapper: {
+    padding: spacing.lg,
+    flex: 1,
+  },
+  mainWrapperDesktop: {
+    maxWidth: 1360,
+    alignSelf: 'center',
+    width: '100%',
+    paddingVertical: spacing.xl,
+  },
+
+  // Status Header
+  statusHeaderBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: colors.surfaceWhite,
     borderRadius: borderRadius.xl,
     padding: spacing.lg,
     borderWidth: 1,
     borderColor: colors.borderLight,
+    marginBottom: spacing.lg,
     ...shadows.medium,
   },
-  washerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  avatar: { width: 48, height: 48, borderRadius: 24, borderWidth: 2, borderColor: colors.primaryBlue },
-  washerName: { fontSize: 16, fontWeight: '900', color: colors.textDark },
-  ratingPill: { backgroundColor: colors.amberLight, paddingHorizontal: 6, paddingVertical: 2, borderRadius: borderRadius.sm },
-  ratingText: { color: colors.amberOffer, fontSize: 10, fontWeight: '900' },
-  vehicleInfo: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
-  plateText: { fontWeight: '800', color: colors.textDark },
-  orderSummaryBox: { backgroundColor: colors.backgroundLight, borderRadius: borderRadius.md, padding: spacing.md, marginBottom: 12, gap: 4 },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  summaryLabel: { fontSize: 11, color: colors.textMuted, fontWeight: '600' },
-  summaryValue: { fontSize: 11, fontWeight: '800', color: colors.textDark },
-  totalPrice: { fontSize: 12, fontWeight: '900', color: colors.primaryBlue },
-  actionBtnRow: { flexDirection: 'row', gap: 10 },
-  chatBtn: { flex: 1, backgroundColor: colors.primaryLight, paddingVertical: 12, borderRadius: borderRadius.md, alignItems: 'center' },
-  chatBtnText: { color: colors.primaryDark, fontWeight: '800', fontSize: 13 },
-  callBtn: { flex: 1, backgroundColor: colors.primaryBlue, paddingVertical: 12, borderRadius: borderRadius.md, alignItems: 'center' },
-  callBtnText: { color: '#ffffff', fontWeight: '900', fontSize: 13 },
+  statusHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    flex: 1,
+  },
+  statusIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  statusIconCircleArrived: {
+    backgroundColor: colors.successLight,
+  },
+  statusTitleText: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: colors.brandNavy,
+  },
+  statusSubText: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  simBtn: {
+    backgroundColor: colors.primaryLight,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: borderRadius.md,
+  },
+  simBtnText: {
+    color: colors.primaryDark,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+
+  // Grid Layout
+  gridContainer: {
+    flexDirection: 'column',
+    gap: spacing.lg,
+    flex: 1,
+  },
+  gridContainerDesktop: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+  },
+  mapFlex: {
+    flex: 6,
+  },
+  detailsFlex: {
+    flex: 4,
+  },
+
+  // Map Canvas
+  mapContainerCard: {
+    backgroundColor: '#cbd5e1',
+    borderRadius: borderRadius.xl,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.borderMedium,
+    minHeight: 380,
+    ...shadows.medium,
+  },
+  mapGraphicCanvas: {
+    flex: 1,
+    backgroundColor: '#cbd5e1',
+    position: 'relative',
+  },
+  roadH1: {
+    position: 'absolute',
+    top: '40%',
+    left: 0,
+    right: 0,
+    height: 36,
+    backgroundColor: '#94a3b8',
+  },
+  roadH2: {
+    position: 'absolute',
+    top: '70%',
+    left: 0,
+    right: 0,
+    height: 24,
+    backgroundColor: '#94a3b8',
+  },
+  roadV1: {
+    position: 'absolute',
+    left: '45%',
+    top: 0,
+    bottom: 0,
+    width: 36,
+    backgroundColor: '#94a3b8',
+  },
+  buildingBlock1: {
+    position: 'absolute',
+    top: 20,
+    left: 30,
+    width: 120,
+    height: 80,
+    backgroundColor: '#64748b',
+    borderRadius: 8,
+  },
+  buildingBlock2: {
+    position: 'absolute',
+    bottom: 30,
+    right: 40,
+    width: 140,
+    height: 90,
+    backgroundColor: '#64748b',
+    borderRadius: 8,
+  },
+  buildingBlock3: {
+    position: 'absolute',
+    top: 30,
+    right: 50,
+    width: 100,
+    height: 70,
+    backgroundColor: '#64748b',
+    borderRadius: 8,
+  },
+
+  markerPinBox: {
+    position: 'absolute',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  destPinPos: {
+    top: '35%',
+    left: '20%',
+  },
+  destPinBubble: {
+    backgroundColor: colors.brandNavy,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: borderRadius.pill,
+    marginBottom: 4,
+  },
+  destPinBubbleText: {
+    color: '#ffffff',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  pinDotRed: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#ef4444',
+    borderWidth: 2,
+    borderColor: '#ffffff',
+  },
+  routePathLine: {
+    position: 'absolute',
+    top: '42%',
+    left: '26%',
+    width: 220,
+    height: 5,
+    backgroundColor: colors.primaryBlue,
+    borderRadius: 2.5,
+    transform: [{ rotate: '20deg' }],
+  },
+  washerEnRoutePos: {
+    top: '55%',
+    left: '65%',
+  },
+  washerArrivedPos: {
+    top: '38%',
+    left: '24%',
+  },
+  washerBubbleTag: {
+    backgroundColor: colors.successGreen,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: borderRadius.xs,
+    marginTop: -4,
+  },
+  washerBubbleText: {
+    color: '#ffffff',
+    fontSize: 10,
+    fontWeight: '900',
+  },
+
+  // Details Panel
+  detailsCardPanel: {
+    backgroundColor: colors.surfaceWhite,
+    borderRadius: borderRadius.xl,
+    padding: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    ...shadows.medium,
+  },
+  washerProfileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  washerAvatarImage: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 2,
+    borderColor: colors.primaryBlue,
+  },
+  washerName: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: colors.brandNavy,
+  },
+  ratingBadgePill: {
+    backgroundColor: colors.amberLight,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: borderRadius.xs,
+  },
+  ratingBadgeText: {
+    color: colors.amberOffer,
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  washerVehicleText: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  boldText: {
+    fontWeight: '800',
+    color: colors.textDark,
+  },
+  equipmentText: {
+    fontSize: 11,
+    color: colors.primaryDark,
+    fontWeight: '700',
+    marginTop: 2,
+  },
+
+  summaryBox: {
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    gap: 8,
+    marginBottom: spacing.lg,
+  },
+  summaryHeaderTag: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: colors.textMuted,
+    letterSpacing: 0.8,
+    marginBottom: 4,
+  },
+  sumRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  sumLabel: {
+    fontSize: 11,
+    color: colors.textMuted,
+  },
+  sumValue: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.textDark,
+  },
+  totalPaidText: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: colors.primaryBlue,
+  },
+
+  actionsRow: {
+    flexDirection: 'column',
+    gap: 10,
+  },
+  chatActionBtn: {
+    backgroundColor: colors.primaryBlue,
+    paddingVertical: 14,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    ...shadows.soft,
+  },
+  chatActionBtnText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  callActionBtn: {
+    backgroundColor: colors.primaryLight,
+    paddingVertical: 14,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+  },
+  callActionBtnText: {
+    color: colors.primaryDark,
+    fontSize: 13,
+    fontWeight: '800',
+  },
 });
