@@ -65,13 +65,17 @@ interface BookingContextType {
   updateStatus: (status: BookingStatus) => void;
   submitRating: (rating: number, tipMYR?: number) => void;
 
-  // Washer State
+  // Washer State & Service Capabilities
   isWasherOnline: boolean;
   setIsWasherOnline: (online: boolean) => void;
+  washerOfferedServices: string[];
+  toggleWasherService: (serviceId: string) => void;
   washerTodayEarnings: number;
   washerCompletedJobsCount: number;
   deliveryJobs: ProductDeliveryJob[];
   acceptDeliveryJob: (id: string) => void;
+  availableCustomerOrders: CustomerBooking[];
+  grabOrder: (orderId: string) => boolean;
 }
 
 const BookingContext = createContext<BookingContextType | undefined>(undefined);
@@ -185,11 +189,104 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  // Washer State
+  // Washer State & Service Capabilities
   const [isWasherOnline, setIsWasherOnline] = useState<boolean>(true);
   const [washerTodayEarnings, setWasherTodayEarnings] = useState<number>(86.00);
   const [washerCompletedJobsCount, setWasherCompletedJobsCount] = useState<number>(4);
   const [deliveryJobs, setDeliveryJobs] = useState<ProductDeliveryJob[]>(PRODUCT_DELIVERY_JOBS);
+  const [washerOfferedServices, setWasherOfferedServices] = useState<string[]>([
+    'exterior_wash', 
+    'interior_exterior', 
+    'low_water_eco'
+  ]);
+
+  const toggleWasherService = (serviceId: string) => {
+    setWasherOfferedServices(prev => 
+      prev.includes(serviceId) ? prev.filter(id => id !== serviceId) : [...prev, serviceId]
+    );
+  };
+
+  // Available Customer Orders Pool for Washers to Grab
+  const [availableCustomerOrders, setAvailableCustomerOrders] = useState<CustomerBooking[]>([
+    {
+      id: 'MY-772105',
+      service: SERVICE_CATEGORIES[1], // Interior + Exterior (RM48)
+      vehicle: SAVED_VEHICLES[0],
+      location: {
+        id: 'loc_bgs_1',
+        label: 'Bangsar Village',
+        addressLine1: 'Jalan Telawi 1, Bangsar',
+        condoBuildingName: 'Bangsar Village II',
+        unitParkingBay: 'Basement B1, Bay 12',
+        postcode: '59100',
+        city: 'Kuala Lumpur',
+        state: 'Kuala Lumpur',
+        latitude: 3.1319,
+        longitude: 101.6738,
+      },
+      bookingType: 'now',
+      selectedAddons: [],
+      subtotalMYR: 48,
+      serviceFeeMYR: 2,
+      discountMYR: 0,
+      totalMYR: 50,
+      paymentMethod: 'tng_ewallet',
+      status: 'confirmed',
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 'MY-994312',
+      service: SERVICE_CATEGORIES[3], // Thermal Steam Detailing (RM88)
+      vehicle: SAVED_VEHICLES[3], // X70
+      location: {
+        id: 'loc_mk_1',
+        label: 'Mont Kiara Pines',
+        addressLine1: 'Jalan Kiara 1, Mont Kiara',
+        condoBuildingName: 'Mont Kiara Pines',
+        unitParkingBay: 'Level 2, Bay 88',
+        postcode: '50480',
+        city: 'Kuala Lumpur',
+        state: 'Kuala Lumpur',
+        latitude: 3.1698,
+        longitude: 101.6528,
+      },
+      bookingType: 'now',
+      selectedAddons: [],
+      subtotalMYR: 88,
+      serviceFeeMYR: 2,
+      discountMYR: 0,
+      totalMYR: 90,
+      paymentMethod: 'card',
+      status: 'confirmed',
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 'MY-663219',
+      service: SERVICE_CATEGORIES[0], // Exterior Wash (RM28)
+      vehicle: SAVED_VEHICLES[1], // Saga
+      location: {
+        id: 'loc_dh_1',
+        label: 'Plaza Damansara',
+        addressLine1: 'Jalan Medan Setia 1, Bukit Damansara',
+        condoBuildingName: 'Plaza Damansara Block A',
+        unitParkingBay: 'Open Parking Bay 5',
+        postcode: '50490',
+        city: 'Kuala Lumpur',
+        state: 'Kuala Lumpur',
+        latitude: 3.1495,
+        longitude: 101.6625,
+      },
+      bookingType: 'now',
+      selectedAddons: [],
+      subtotalMYR: 28,
+      serviceFeeMYR: 2,
+      discountMYR: 0,
+      totalMYR: 30,
+      paymentMethod: 'duitnow',
+      status: 'confirmed',
+      createdAt: new Date().toISOString(),
+    }
+  ]);
 
   // Initial Active Booking for Demonstration
   const [activeBooking, setActiveBooking] = useState<CustomerBooking | null>({
@@ -211,6 +308,31 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     beforePhotoUrl: 'https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?w=400',
     afterPhotoUrl: 'https://images.unsplash.com/photo-1607860108855-64acf2078ed9?w=400',
   });
+
+  const grabOrder = (orderId: string): boolean => {
+    const orderToGrab = availableCustomerOrders.find(o => o.id === orderId);
+    if (!orderToGrab) return false;
+
+    // Capability check: washer must offer this service category
+    if (!washerOfferedServices.includes(orderToGrab.service.id)) {
+      return false;
+    }
+
+    const assignedBooking: CustomerBooking = {
+      ...orderToGrab,
+      status: 'assigned',
+      washer: {
+        ...SAMPLE_WASHER,
+        offeredServiceIds: washerOfferedServices,
+      },
+      etaMinutes: 12,
+    };
+
+    // Update state
+    setAvailableCustomerOrders(prev => prev.filter(o => o.id !== orderId));
+    setActiveBooking(assignedBooking);
+    return true;
+  };
 
   const toggleAddon = (addon: ServiceAddon) => {
     if (selectedAddons.some(a => a.id === addon.id)) {
@@ -256,6 +378,8 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     setActiveBooking(newBooking);
+    // Add to available pool for washers to see/grab
+    setAvailableCustomerOrders(prev => [newBooking, ...prev]);
     return newBooking;
   };
 
@@ -332,6 +456,10 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       washerCompletedJobsCount,
       deliveryJobs,
       acceptDeliveryJob,
+      washerOfferedServices,
+      toggleWasherService,
+      availableCustomerOrders,
+      grabOrder,
     }}>
       {children}
     </BookingContext.Provider>

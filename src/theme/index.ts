@@ -25,11 +25,14 @@ export const colors = {
   successLight: '#d1fae5',
   successDark: '#059669',
 
-  // Warning & Offers
+  // Warning, Error & Offers
   amberOffer: '#f59e0b',
   amberLight: '#fef3c7',
   warning: '#f59e0b',
   warningLight: '#fef3c7',
+  error: '#ef4444',
+  errorLight: '#fee2e2',
+  errorDark: '#dc2626',
 
   // Clean Light Surfaces & Neutrals
   surfaceWhite: '#ffffff',

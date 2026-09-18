@@ -133,7 +133,7 @@ export const PROMOTIONS: Promotion[] = [
 
 export const SAMPLE_WASHER: WasherProfile = {
   id: 'washer_amir',
-  name: 'Amir',
+  name: 'Amir Hazim',
   phone: '+60 12-345 6789',
   avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
   rating: 4.90,
@@ -141,6 +141,7 @@ export const SAMPLE_WASHER: WasherProfile = {
   vehicleRig: 'Perodua Axia Mobile Rig #4',
   currentZone: 'Bangsar / Mont Kiara, KL',
   isOnline: true,
+  offeredServiceIds: ['exterior_wash', 'interior_exterior', 'low_water_eco'], // Does NOT offer steam_detailing by default
 };
 
 export const PRODUCT_DELIVERY_JOBS: ProductDeliveryJob[] = [

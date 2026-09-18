@@ -74,6 +74,7 @@ export interface WasherProfile {
   vehicleRig: string;
   currentZone: string;
   isOnline: boolean;
+  offeredServiceIds: string[]; // List of service IDs washer provides e.g. ['exterior_wash', 'interior_exterior', 'low_water_eco']
 }
 
 export interface Promotion {
