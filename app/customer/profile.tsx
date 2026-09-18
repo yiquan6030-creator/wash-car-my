@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useBooking } from '../../src/context/BookingContext';
 import { colors, spacing, borderRadius, shadows } from '../../src/theme';
 import { SAVED_VEHICLES, SAVED_LOCATIONS } from '../../src/services/mockData';
 
@@ -13,6 +14,7 @@ interface MenuItem {
 
 export default function CustomerProfileScreen() {
   const router = useRouter();
+  const { logoutUser } = useBooking();
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
 
@@ -110,7 +112,10 @@ export default function CustomerProfileScreen() {
         {/* LOGOUT BUTTON */}
         <TouchableOpacity 
           style={styles.logoutBtn}
-          onPress={() => alert('Logged out successfully.')}
+          onPress={() => {
+            logoutUser();
+            router.replace('/');
+          }}
         >
           <Text style={styles.logoutText}>Log Out of WashCar MY</Text>
         </TouchableOpacity>

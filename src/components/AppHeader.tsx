@@ -8,19 +8,11 @@ export default function AppHeader() {
   const router = useRouter();
   const pathname = usePathname();
   const { width } = useWindowDimensions();
-  const { role, setRole, draftLocation } = useBooking();
+  const { role, isAuthenticated, draftLocation } = useBooking();
 
   const isDesktop = width >= 768;
+  const isUnauthenticated = !isAuthenticated || pathname === '/';
   const isWasherMode = pathname.startsWith('/washer') || role === 'washer';
-
-  const handleRoleToggle = (targetRole: 'customer' | 'washer') => {
-    setRole(targetRole);
-    if (targetRole === 'washer' && !pathname.startsWith('/washer')) {
-      router.replace('/washer');
-    } else if (targetRole === 'customer' && pathname.startsWith('/washer')) {
-      router.replace('/customer');
-    }
-  };
 
   const navItems = isWasherMode
     ? [
@@ -45,30 +37,30 @@ export default function AppHeader() {
         {/* Left: Brand Identity */}
         <TouchableOpacity
           style={styles.brandRow}
-          onPress={() => router.push(isWasherMode ? '/washer' : '/customer')}
+          onPress={() => router.push(isUnauthenticated ? '/' : (isWasherMode ? '/washer' : '/customer'))}
           activeOpacity={0.8}
         >
-          <View style={[styles.logoBadge, isWasherMode && styles.logoBadgeWasher]}>
-            <Text style={styles.logoIcon}>{isWasherMode ? '🛵' : '🧼'}</Text>
+          <View style={[styles.logoBadge, (!isUnauthenticated && isWasherMode) && styles.logoBadgeWasher]}>
+            <Text style={styles.logoIcon}>{(!isUnauthenticated && isWasherMode) ? '🛵' : '🧼'}</Text>
           </View>
           <View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <Text style={styles.brandTitle}>WashCar</Text>
-              <View style={[styles.myTag, isWasherMode && styles.myTagWasher]}>
+              <View style={[styles.myTag, (!isUnauthenticated && isWasherMode) && styles.myTagWasher]}>
                 <Text style={styles.myTagText}>MY 🇲🇾</Text>
               </View>
             </View>
             <Text style={styles.brandTagline}>
-              {isWasherMode ? 'Pro Detailer Partner' : 'Doorstep Mobile Detailing'}
+              {(!isUnauthenticated && isWasherMode) ? 'Pro Detailer Partner' : 'Doorstep Mobile Detailing'}
             </Text>
           </View>
         </TouchableOpacity>
 
-        {/* Center: Desktop Navigation Links */}
-        {isDesktop && (
+        {/* Center: Desktop Navigation Links (Only if Logged In) */}
+        {isDesktop && !isUnauthenticated && (
           <View style={styles.navLinksRow}>
             {navItems.map((item) => {
-              const isActive = pathname === item.path || (item.path === '/customer' && (pathname === '/' || pathname === '/customer/'));
+              const isActive = pathname === item.path || (item.path === '/customer' && pathname === '/customer/');
               return (
                 <TouchableOpacity
                   key={item.path}
@@ -84,58 +76,58 @@ export default function AppHeader() {
           </View>
         )}
 
-        {/* Right Controls: Location, Mode Switcher, Notifications, Profile */}
+        {/* Right Controls */}
         <View style={styles.headerRight}>
-          
-          {/* Location Badge (Desktop/Tablet) */}
-          {isDesktop && !isWasherMode && (
+          {isUnauthenticated ? (
             <TouchableOpacity
-              style={styles.locationPill}
-              onPress={() => router.push('/customer/book')}
+              style={styles.guestLoginPill}
+              onPress={() => router.push('/')}
             >
-              <Text style={styles.locationIcon}>📍</Text>
-              <Text style={styles.locationText} numberOfLines={1}>
-                {draftLocation?.city || 'Bangsar, KL'}
-              </Text>
+              <Text style={styles.guestLoginText}>🔒 登录入口 / Sign In</Text>
             </TouchableOpacity>
+          ) : (
+            <>
+              {/* Location Badge (Desktop/Tablet) */}
+              {isDesktop && !isWasherMode && (
+                <TouchableOpacity
+                  style={styles.locationPill}
+                  onPress={() => router.push('/customer/book')}
+                >
+                  <Text style={styles.locationIcon}>📍</Text>
+                  <Text style={styles.locationText} numberOfLines={1}>
+                    {draftLocation?.city || 'Bangsar, KL'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {/* Single Role Indicator Badge */}
+              <TouchableOpacity 
+                style={[styles.roleSingleBadge, isWasherMode ? styles.roleBadgeWasher : styles.roleBadgeCustomer]}
+                onPress={() => router.push(isWasherMode ? '/washer/profile' : '/customer/profile')}
+              >
+                <Text style={styles.roleSingleBadgeText}>
+                  {isWasherMode ? '🛵 洗车员端' : '👤 客户端'}
+                </Text>
+              </TouchableOpacity>
+
+              {/* Notification Button */}
+              <TouchableOpacity
+                style={styles.iconBtn}
+                onPress={() => alert('Notifications: Your washer Amir is 8 minutes away!')}
+              >
+                <Text style={{ fontSize: 16 }}>🔔</Text>
+                <View style={styles.notificationDot} />
+              </TouchableOpacity>
+
+              {/* Profile Avatar */}
+              <TouchableOpacity onPress={() => router.push(isWasherMode ? '/washer/profile' : '/customer/profile')}>
+                <Image
+                  source={{ uri: isWasherMode ? 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=120' : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120' }}
+                  style={[styles.avatar, isWasherMode && styles.avatarWasher]}
+                />
+              </TouchableOpacity>
+            </>
           )}
-
-          {/* Role Segmented Switcher Pill */}
-          <View style={styles.roleSwitcherPill}>
-            <TouchableOpacity
-              style={[styles.roleOption, !isWasherMode && styles.roleOptionActiveCustomer]}
-              onPress={() => handleRoleToggle('customer')}
-            >
-              <Text style={[styles.roleOptionText, !isWasherMode && styles.roleOptionTextActive]}>
-                Customer
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.roleOption, isWasherMode && styles.roleOptionActiveWasher]}
-              onPress={() => handleRoleToggle('washer')}
-            >
-              <Text style={[styles.roleOptionText, isWasherMode && styles.roleOptionTextActive]}>
-                Washer 🛵
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Notification Button */}
-          <TouchableOpacity
-            style={styles.iconBtn}
-            onPress={() => alert('Notifications: Your washer Amir is 8 minutes away!')}
-          >
-            <Text style={{ fontSize: 16 }}>🔔</Text>
-            <View style={styles.notificationDot} />
-          </TouchableOpacity>
-
-          {/* Profile Avatar */}
-          <TouchableOpacity onPress={() => router.push(isWasherMode ? '/washer/profile' : '/customer/profile')}>
-            <Image
-              source={{ uri: isWasherMode ? 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=120' : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120' }}
-              style={styles.avatar}
-            />
-          </TouchableOpacity>
         </View>
 
       </View>
@@ -245,6 +237,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
+  guestLoginPill: {
+    backgroundColor: '#1e293b',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: borderRadius.pill,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  guestLoginText: {
+    color: '#38bdf8',
+    fontSize: 12,
+    fontWeight: '800',
+  },
   locationPill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -264,31 +269,25 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  roleSwitcherPill: {
-    flexDirection: 'row',
-    backgroundColor: '#1e293b',
-    padding: 3,
-    borderRadius: borderRadius.pill,
-  },
-  roleOption: {
+  roleSingleBadge: {
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 6,
     borderRadius: borderRadius.pill,
   },
-  roleOptionActiveCustomer: {
-    backgroundColor: colors.primaryBlue,
+  roleBadgeCustomer: {
+    backgroundColor: 'rgba(56, 189, 248, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.3)',
   },
-  roleOptionActiveWasher: {
-    backgroundColor: colors.washerAccent,
+  roleBadgeWasher: {
+    backgroundColor: 'rgba(52, 211, 153, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(52, 211, 153, 0.3)',
   },
-  roleOptionText: {
+  roleSingleBadgeText: {
     fontSize: 11,
-    fontWeight: '700',
-    color: '#94a3b8',
-  },
-  roleOptionTextActive: {
+    fontWeight: '800',
     color: '#ffffff',
-    fontWeight: '900',
   },
 
   iconBtn: {
@@ -317,5 +316,8 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     borderWidth: 1.5,
     borderColor: colors.primaryBlue,
+  },
+  avatarWasher: {
+    borderColor: colors.washerAccent,
   },
 });

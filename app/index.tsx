@@ -145,7 +145,10 @@ export default function LoginEntranceScreen() {
                 {/* DEMO ONE-CLICK BUTTON */}
                 <TouchableOpacity
                   style={styles.demoCustomerBtn}
-                  onPress={() => loginAsCustomer('+60 12-345 6789')}
+                  onPress={() => {
+                    loginAsCustomer('+60 12-345 6789');
+                    router.replace('/customer');
+                  }}
                 >
                   <Text style={styles.demoCustomerText}>⚡ 演示客户一键登录 (Lee Wei Jian)</Text>
                 </TouchableOpacity>
@@ -204,7 +207,10 @@ export default function LoginEntranceScreen() {
                 {/* DEMO ONE-CLICK WASHER BUTTON */}
                 <TouchableOpacity
                   style={styles.demoWasherBtn}
-                  onPress={() => loginAsWasher('+60 18-987 6543')}
+                  onPress={() => {
+                    loginAsWasher('+60 18-987 6543');
+                    router.replace('/washer');
+                  }}
                 >
                   <Text style={styles.demoWasherText}>⚡ 演示洗车员一键登录 (Amir Hazim)</Text>
                 </TouchableOpacity>

@@ -1,15 +1,17 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
+import { useBooking } from '../context/BookingContext';
 import { colors, shadows } from '../theme';
 
 export default function BottomTabBar() {
   const router = useRouter();
   const pathname = usePathname();
   const { width } = useWindowDimensions();
+  const { isAuthenticated } = useBooking();
 
-  // Hide mobile bottom navigation bar on desktop/tablet views (width >= 768px)
-  if (width >= 768) {
+  // Hide mobile bottom navigation bar on desktop/tablet views, login screen, or unauthenticated state
+  if (width >= 768 || pathname === '/' || !isAuthenticated) {
     return null;
   }
 

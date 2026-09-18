@@ -8,7 +8,7 @@ import { SAMPLE_WASHER } from '../../src/services/mockData';
 export default function WasherProfileScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const { setRole } = useBooking();
+  const { setRole, logoutUser } = useBooking();
 
   const isDesktop = width >= 1024;
 
@@ -86,6 +86,17 @@ export default function WasherProfileScreen() {
           <Text style={styles.itemTitle}>🏦 Bank Payout Account: Maybank</Text>
           <Text style={styles.itemSub}>Account #: ********8821 • Verified for Instant Direct Transfer</Text>
         </View>
+
+        {/* LOGOUT BUTTON */}
+        <TouchableOpacity 
+          style={styles.logoutBtn}
+          onPress={() => {
+            logoutUser();
+            router.replace('/');
+          }}
+        >
+          <Text style={styles.logoutText}>Log Out of WashCar MY Partner</Text>
+        </TouchableOpacity>
 
       </View>
     </ScrollView>
@@ -233,5 +244,19 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginTop: 4,
     lineHeight: 18,
+  },
+  logoutBtn: {
+    backgroundColor: '#fef2f2',
+    paddingVertical: 14,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#fecaca',
+    marginTop: spacing.md,
+  },
+  logoutText: {
+    color: '#dc2626',
+    fontWeight: '900',
+    fontSize: 14,
   },
 });
