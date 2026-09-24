@@ -11,7 +11,7 @@ export default function WasherHomeScreen() {
   const { 
     isWasherOnline, setIsWasherOnline, 
     washerTodayEarnings, washerCompletedJobsCount, 
-    activeBooking, updateBookingStatus 
+    activeBooking, updateBookingStatus, t
   } = useBooking();
 
   const isDesktop = width >= 1024;
@@ -32,7 +32,7 @@ export default function WasherHomeScreen() {
                 </View>
               </View>
               <Text style={styles.dutyStatusText}>
-                {isWasherOnline ? '🟢 Duty Status: ONLINE & ACCEPTING JOBS' : '🔴 Duty Status: OFFLINE'}
+                {isWasherOnline ? t('washerStatusOnline') : t('washerStatusOffline')}
               </Text>
             </View>
           </View>
@@ -48,13 +48,13 @@ export default function WasherHomeScreen() {
         {/* TODAY STATS SUMMARY DASHBOARD */}
         <View style={styles.statsGrid}>
           <View style={styles.statBox}>
-            <Text style={styles.statLabel}>TODAY'S EARNINGS</Text>
+            <Text style={styles.statLabel}>{t('todayEarnings').toUpperCase()}</Text>
             <Text style={styles.statValueRM}>RM {washerTodayEarnings.toFixed(0)}</Text>
             <Text style={styles.statSub}>credited to wallet</Text>
           </View>
 
           <View style={styles.statBox}>
-            <Text style={styles.statLabel}>COMPLETED JOBS</Text>
+            <Text style={styles.statLabel}>{t('completedJobs').toUpperCase()}</Text>
             <Text style={styles.statValueNum}>{washerCompletedJobsCount}</Text>
             <Text style={styles.statSub}>washes done today</Text>
           </View>

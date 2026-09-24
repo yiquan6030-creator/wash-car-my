@@ -16,7 +16,8 @@ export default function CustomerHomeScreen() {
     draftVehicle, setDraftVehicle,
     draftLocation, setDraftLocation,
     isLocatingGps, fetchGpsLocation,
-    confirmBooking
+    confirmBooking,
+    t
   } = useBooking();
 
   const isDesktop = width >= 1024;
@@ -73,14 +74,14 @@ export default function CustomerHomeScreen() {
             {/* ============================================================ */}
             <View style={styles.greenSectionBox}>
               <View style={styles.sectionBadgeGreen}>
-                <Text style={styles.sectionBadgeGreenText}>🟢 地图定位、已选车辆车牌车色与预约车位钥匙</Text>
+                <Text style={styles.sectionBadgeGreenText}>{t('greenSectionBadge')}</Text>
               </View>
 
               {/* 1. Address / Map Search Bar */}
               <View style={styles.addressSearchBarCard}>
                 <Text style={{ fontSize: 18 }}>📍</Text>
                 <View style={{ flex: 1, marginLeft: 8 }}>
-                  <Text style={styles.searchBarLabel}>去哪里上门洗车？ (Search Wash Location)</Text>
+                  <Text style={styles.searchBarLabel}>{t('searchBarLabel')}</Text>
                   <Text style={styles.searchBarAddress} numberOfLines={1}>
                     {draftLocation?.addressLine1 || 'Jalan Telawi 3, Bangsar, KL'}
                   </Text>
@@ -91,12 +92,12 @@ export default function CustomerHomeScreen() {
                   disabled={isLocatingGps}
                 >
                   <Text style={styles.gpsAutoBtnText}>
-                    {isLocatingGps ? '定位中...' : '📍 GPS 自动定位'}
+                    {isLocatingGps ? t('locating') : t('gpsAutoBtn')}
                   </Text>
                 </TouchableOpacity>
               </View>
 
-              {/* Saved Address Pickers List (McDonald's, DNP大厦, 新山成功滨水酒店, Bangsar) */}
+              {/* Saved Address Pickers List */}
               <View style={styles.savedLocationPickerGrid}>
                 {SAVED_LOCATIONS.map((loc) => {
                   const isLocSelected = draftLocation?.id === loc.id;
@@ -124,9 +125,9 @@ export default function CustomerHomeScreen() {
               {/* 2. Vehicle Garage Quick Switcher with License Plate & Color Badge */}
               <View style={styles.garageSectionGreen}>
                 <View style={styles.garageHeaderRow}>
-                  <Text style={styles.sectionHeaderLabelGreen}>已选车辆与车牌车身颜色 (VEHICLE & COLOR)</Text>
+                  <Text style={styles.sectionHeaderLabelGreen}>{t('vehicleHeader')}</Text>
                   <TouchableOpacity onPress={() => router.push('/customer/profile')}>
-                    <Text style={styles.garageManageLink}>管理车库 →</Text>
+                    <Text style={styles.garageManageLink}>{t('manageGarage')}</Text>
                   </TouchableOpacity>
                 </View>
 
@@ -168,14 +169,14 @@ export default function CustomerHomeScreen() {
                 
                 {/* Property / Service Location Type */}
                 <View style={styles.controlRowBlock}>
-                  <Text style={styles.controlBlockTitle}>服务地点类型 (Property Type):</Text>
+                  <Text style={styles.controlBlockTitle}>{t('propTypeTitle')}</Text>
                   <View style={styles.segmentedButtonsRow}>
                     <TouchableOpacity
                       style={[styles.segBtn, selectedPropType === 'condo' && styles.segBtnActive]}
                       onPress={() => setSelectedPropType('condo')}
                     >
                       <Text style={[styles.segBtnText, selectedPropType === 'condo' && styles.segBtnTextActive]}>
-                        🏢 住宅公寓/大厦
+                        {t('propCondo')}
                       </Text>
                     </TouchableOpacity>
 
@@ -184,7 +185,7 @@ export default function CustomerHomeScreen() {
                       onPress={() => setSelectedPropType('landed')}
                     >
                       <Text style={[styles.segBtnText, selectedPropType === 'landed' && styles.segBtnTextActive]}>
-                        🏠 上门独栋/排屋
+                        {t('propLanded')}
                       </Text>
                     </TouchableOpacity>
 
@@ -193,7 +194,7 @@ export default function CustomerHomeScreen() {
                       onPress={() => setSelectedPropType('office')}
                     >
                       <Text style={[styles.segBtnText, selectedPropType === 'office' && styles.segBtnTextActive]}>
-                        🏬 商业广场
+                        {t('propOffice')}
                       </Text>
                     </TouchableOpacity>
                   </View>
@@ -201,14 +202,14 @@ export default function CustomerHomeScreen() {
 
                 {/* Key Collection / Handover Option (预定要拿钥匙) */}
                 <View style={styles.controlRowBlock}>
-                  <Text style={styles.controlBlockTitle}>🔑 车钥匙交接方式 (Key Collection / Handover):</Text>
+                  <Text style={styles.controlBlockTitle}>{t('keyHandoverTitle')}</Text>
                   <View style={styles.segmentedButtonsRow}>
                     <TouchableOpacity
                       style={[styles.segBtnKey, selectedKeyOption === 'in_person' && styles.segBtnKeyActive]}
                       onPress={() => setSelectedKeyOption('in_person')}
                     >
                       <Text style={[styles.segBtnText, selectedKeyOption === 'in_person' && styles.segBtnTextActive]}>
-                        🔑 现场面交车钥匙
+                        {t('keyInPerson')}
                       </Text>
                     </TouchableOpacity>
 
@@ -217,7 +218,7 @@ export default function CustomerHomeScreen() {
                       onPress={() => setSelectedKeyOption('unlocked')}
                     >
                       <Text style={[styles.segBtnText, selectedKeyOption === 'unlocked' && styles.segBtnTextActive]}>
-                        🔓 车已解密/无钥匙
+                        {t('keyUnlocked')}
                       </Text>
                     </TouchableOpacity>
 
@@ -226,7 +227,7 @@ export default function CustomerHomeScreen() {
                       onPress={() => setSelectedKeyOption('guardhouse')}
                     >
                       <Text style={[styles.segBtnText, selectedKeyOption === 'guardhouse' && styles.segBtnTextActive]}>
-                        📫 保安处/信箱留钥匙
+                        {t('keyGuardhouse')}
                       </Text>
                     </TouchableOpacity>
                   </View>
@@ -234,7 +235,7 @@ export default function CustomerHomeScreen() {
 
                 {/* Parking Bay Details */}
                 <View style={styles.controlRowBlockNoBorder}>
-                  <Text style={styles.controlBlockTitle}>🅿️ 停车场及车位编号 (Parking Bay Location):</Text>
+                  <Text style={styles.controlBlockTitle}>{t('parkingBayTitle')}</Text>
                   <View style={styles.parkingInputBox}>
                     <Text style={{ fontSize: 16 }}>🅿️</Text>
                     <Text style={styles.parkingInputText}>
@@ -253,7 +254,7 @@ export default function CustomerHomeScreen() {
             <View style={styles.redSectionBox}>
               <View style={styles.sectionHeaderRowRed}>
                 <View style={styles.sectionBadgeRed}>
-                  <Text style={styles.sectionBadgeRedText}>🔴 满足您一切需求的各种门到门洗车服务</Text>
+                  <Text style={styles.sectionBadgeRedText}>{t('redSectionBadge')}</Text>
                 </View>
               </View>
 
@@ -282,7 +283,7 @@ export default function CustomerHomeScreen() {
             {/* Price Estimator & Book CTA */}
             <View style={styles.heroCtaBar}>
               <View>
-                <Text style={styles.ctaPriceLabel}>Estimated Starting Price</Text>
+                <Text style={styles.ctaPriceLabel}>{t('estimatedPriceLabel')}</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4 }}>
                   <Text style={styles.ctaPriceValue}>RM {draftService?.startingPriceMYR || 48}</Text>
                   <Text style={styles.ctaPriceSub}>.00 MYR</Text>
@@ -294,7 +295,7 @@ export default function CustomerHomeScreen() {
                 onPress={() => setIsInlineCheckoutOpen(true)}
                 activeOpacity={0.9}
               >
-                <Text style={styles.mainBookBtnText}>显示地图与即时支付 →</Text>
+                <Text style={styles.mainBookBtnText}>{t('showMapPayBtn')}</Text>
               </TouchableOpacity>
             </View>
           </View>

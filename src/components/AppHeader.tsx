@@ -8,7 +8,7 @@ export default function AppHeader() {
   const router = useRouter();
   const pathname = usePathname();
   const { width } = useWindowDimensions();
-  const { role, isAuthenticated, draftLocation } = useBooking();
+  const { role, isAuthenticated, draftLocation, language, setLanguage, t } = useBooking();
 
   const isDesktop = width >= 768;
   const isUnauthenticated = !isAuthenticated || pathname === '/';
@@ -16,18 +16,18 @@ export default function AppHeader() {
 
   const navItems = isWasherMode
     ? [
-        { label: 'Workbench', path: '/washer' },
-        { label: 'Available Jobs', path: '/washer/jobs' },
-        { label: 'Earnings', path: '/washer/earnings' },
-        { label: 'Messages', path: '/washer/messages' },
-        { label: 'Detailer Profile', path: '/washer/profile' },
+        { label: t('workbench'), path: '/washer' },
+        { label: t('availableJobs'), path: '/washer/jobs' },
+        { label: t('earnings'), path: '/washer/earnings' },
+        { label: t('messages'), path: '/washer/messages' },
+        { label: t('detailerProfile'), path: '/washer/profile' },
       ]
     : [
-        { label: 'Home', path: '/customer' },
-        { label: 'Book Wash', path: '/customer/book' },
-        { label: 'My Orders', path: '/customer/orders' },
-        { label: 'Messages', path: '/customer/messages' },
-        { label: 'Garage & Profile', path: '/customer/profile' },
+        { label: t('home'), path: '/customer' },
+        { label: t('bookWash'), path: '/customer/book' },
+        { label: t('myOrders'), path: '/customer/orders' },
+        { label: t('messages'), path: '/customer/messages' },
+        { label: t('profile'), path: '/customer/profile' },
       ];
 
   return (
@@ -51,7 +51,7 @@ export default function AppHeader() {
               </View>
             </View>
             <Text style={styles.brandTagline}>
-              {(!isUnauthenticated && isWasherMode) ? 'Pro Detailer Partner' : 'Doorstep Mobile Detailing'}
+              {(!isUnauthenticated && isWasherMode) ? t('brandTaglineWasher') : t('brandTaglineCustomer')}
             </Text>
           </View>
         </TouchableOpacity>
@@ -78,12 +78,37 @@ export default function AppHeader() {
 
         {/* Right Controls */}
         <View style={styles.headerRight}>
+
+          {/* Tri-Lingual Language Switcher Pill (中文 / EN / BM) */}
+          <View style={styles.langPillContainer}>
+            <TouchableOpacity
+              style={[styles.langBtn, language === 'zh' && styles.langBtnActive]}
+              onPress={() => setLanguage('zh')}
+            >
+              <Text style={[styles.langText, language === 'zh' && styles.langTextActive]}>🇲🇾 中文</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.langBtn, language === 'en' && styles.langBtnActive]}
+              onPress={() => setLanguage('en')}
+            >
+              <Text style={[styles.langText, language === 'en' && styles.langTextActive]}>🇬🇧 EN</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.langBtn, language === 'ms' && styles.langBtnActive]}
+              onPress={() => setLanguage('ms')}
+            >
+              <Text style={[styles.langText, language === 'ms' && styles.langTextActive]}>🇲🇾 BM</Text>
+            </TouchableOpacity>
+          </View>
+
           {isUnauthenticated ? (
             <TouchableOpacity
               style={styles.guestLoginPill}
               onPress={() => router.push('/')}
             >
-              <Text style={styles.guestLoginText}>🔒 登录入口 / Sign In</Text>
+              <Text style={styles.guestLoginText}>{t('signIn')}</Text>
             </TouchableOpacity>
           ) : (
             <>
@@ -106,7 +131,7 @@ export default function AppHeader() {
                 onPress={() => router.push(isWasherMode ? '/washer/profile' : '/customer/profile')}
               >
                 <Text style={styles.roleSingleBadgeText}>
-                  {isWasherMode ? '🛵 洗车员端' : '👤 客户端'}
+                  {isWasherMode ? t('washerRole') : t('customerRole')}
                 </Text>
               </TouchableOpacity>
 
@@ -319,5 +344,29 @@ const styles = StyleSheet.create({
   },
   avatarWasher: {
     borderColor: colors.washerAccent,
+  },
+  langPillContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#1e293b',
+    padding: 3,
+    borderRadius: borderRadius.pill,
+    marginRight: 4,
+  },
+  langBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: borderRadius.pill,
+  },
+  langBtnActive: {
+    backgroundColor: colors.primaryBlue,
+  },
+  langText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#94a3b8',
+  },
+  langTextActive: {
+    color: '#ffffff',
+    fontWeight: '900',
   },
 });

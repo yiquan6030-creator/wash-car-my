@@ -7,7 +7,7 @@ import { colors, spacing, borderRadius, shadows } from '../src/theme';
 export default function LoginEntranceScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const { loginAsCustomer, loginAsWasher } = useBooking();
+  const { loginAsCustomer, loginAsWasher, t } = useBooking();
 
   const isDesktop = width >= 1024;
   const isTablet = width >= 768;
@@ -49,10 +49,10 @@ export default function LoginEntranceScreen() {
           </View>
 
           <Text style={styles.heroHeadline}>
-            Malaysia's Premier Doorstep Mobile Detailing Platform
+            {t('heroTitle')}
           </Text>
           <Text style={styles.heroSubText}>
-            Select your login channel below to access customer car wash booking or detailer job workbench.
+            {t('heroSub')}
           </Text>
         </View>
 
@@ -69,10 +69,10 @@ export default function LoginEntranceScreen() {
               <Text style={styles.channelTabIcon}>👤</Text>
               <View>
                 <Text style={[styles.channelTabTitle, activeChannel === 'customer' && styles.channelTextActive]}>
-                  洗车客户登录
+                  {t('tabCustomer')}
                 </Text>
                 <Text style={[styles.channelTabSub, activeChannel === 'customer' && styles.channelSubActive]}>
-                  Customer Sign In
+                  {t('tabCustomerSub')}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -85,10 +85,10 @@ export default function LoginEntranceScreen() {
               <Text style={styles.channelTabIcon}>🛵</Text>
               <View>
                 <Text style={[styles.channelTabTitle, activeChannel === 'washer' && styles.channelTextActive]}>
-                  洗车员/接单端登录
+                  {t('tabWasher')}
                 </Text>
                 <Text style={[styles.channelTabSub, activeChannel === 'washer' && styles.channelSubActive]}>
-                  Washer Partner Sign In
+                  {t('tabWasherSub')}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -102,10 +102,10 @@ export default function LoginEntranceScreen() {
                 <Text style={styles.channelTabIcon}>⚖️</Text>
                 <View>
                   <Text style={[styles.channelTabTitle, activeChannel === 'both' && styles.channelTextActive]}>
-                    双端通道平铺
+                    {t('tabBoth')}
                   </Text>
                   <Text style={[styles.channelTabSub, activeChannel === 'both' && styles.channelSubActive]}>
-                    Side-by-Side View
+                    {t('tabBothSub')}
                   </Text>
                 </View>
               </TouchableOpacity>
