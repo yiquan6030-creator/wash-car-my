@@ -4,6 +4,8 @@ import { useRouter } from 'expo-router';
 import { useBooking } from '../../src/context/BookingContext';
 import { colors, spacing, borderRadius, shadows } from '../../src/theme';
 import { SERVICE_CATEGORIES, PROMOTIONS, SERVICE_ADDONS, SAMPLE_WASHER, SAVED_VEHICLES, SAVED_LOCATIONS } from '../../src/services/mockData';
+import MockMapContainer from '../../src/components/MockMapContainer';
+import { PaymentMethodType } from '../../src/types';
 
 export default function CustomerHomeScreen() {
   const router = useRouter();
@@ -13,11 +15,16 @@ export default function CustomerHomeScreen() {
     draftService, setDraftService, 
     draftVehicle, setDraftVehicle,
     draftLocation, setDraftLocation,
-    isLocatingGps, fetchGpsLocation
+    isLocatingGps, fetchGpsLocation,
+    confirmBooking
   } = useBooking();
 
   const isDesktop = width >= 1024;
   const isTablet = width >= 768;
+
+  // Inline checkout & map display state (Show map & payment directly on right panel without leaving page)
+  const [isInlineCheckoutOpen, setIsInlineCheckoutOpen] = React.useState<boolean>(true);
+  const [inlinePayment, setInlinePayment] = React.useState<PaymentMethodType>('tng_ewallet');
 
   // Additional detail states for booking (as requested by user screenshot)
   const [selectedPropType, setSelectedPropType] = React.useState<'landed' | 'condo' | 'office'>('condo');
@@ -258,7 +265,7 @@ export default function CustomerHomeScreen() {
                     onPress={() => {
                       const matchedCat = SERVICE_CATEGORIES.find(c => c.id === item.catId) || SERVICE_CATEGORIES[0];
                       setDraftService(matchedCat);
-                      router.push('/customer/book');
+                      setIsInlineCheckoutOpen(true);
                     }}
                     activeOpacity={0.8}
                   >
@@ -284,15 +291,15 @@ export default function CustomerHomeScreen() {
 
               <TouchableOpacity
                 style={styles.mainBookBtn}
-                onPress={() => router.push('/customer/book')}
+                onPress={() => setIsInlineCheckoutOpen(true)}
                 activeOpacity={0.9}
               >
-                <Text style={styles.mainBookBtnText}>确认并立即预约洗车 →</Text>
+                <Text style={styles.mainBookBtnText}>显示地图与即时支付 →</Text>
               </TouchableOpacity>
             </View>
           </View>
 
-          {/* RIGHT COLUMN: ACTIVE ORDER LIVE TRACKING COMMAND CENTER */}
+          {/* RIGHT COLUMN: INTERACTIVE MAP & PAYMENT CHECKOUT PANEL (OR LIVE TRACKING) */}
           <View style={[styles.activeTrackingCard, isDesktop && styles.columnFlex]}>
             {activeBooking ? (
               <>
@@ -406,8 +413,98 @@ export default function CustomerHomeScreen() {
                   </TouchableOpacity>
                 </View>
               </>
+            ) : isInlineCheckoutOpen ? (
+              /* INLINE MAP & CHECKOUT PANEL (NO PAGE JUMP REQUIRED) */
+              <View style={styles.inlineCheckoutCard}>
+                <View style={styles.inlineHeaderRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.inlineCheckoutHeaderTitle}>🗺️ 地图定位与即时支付通道</Text>
+                    <Text style={styles.inlineCheckoutHeaderSub}>Live Location Map & One-Click Checkout</Text>
+                  </View>
+                  <View style={styles.liveEtaPill}>
+                    <Text style={styles.liveEtaPillText}>⏱️ 30分钟内极速上门</Text>
+                  </View>
+                </View>
+
+                {/* Live Mock Map Container */}
+                <MockMapContainer
+                  locationName={draftLocation?.label || 'Bangsar Residence'}
+                  condoBuildingName={draftLocation?.condoBuildingName}
+                  unitParkingBay={draftLocation?.unitParkingBay || parkingBayInput}
+                  cityName={draftLocation?.city || 'Kuala Lumpur'}
+                  stateName={draftLocation?.state || 'Kuala Lumpur'}
+                />
+
+                {/* Order Summary Box */}
+                <View style={styles.inlineSummaryBox}>
+                  <View style={styles.summaryItemRow}>
+                    <Text style={styles.summaryLabelText}>已选洗车套餐:</Text>
+                    <Text style={styles.summaryValuePrice}>{draftService.name} (RM {draftService.startingPriceMYR}.00)</Text>
+                  </View>
+                  <View style={styles.summaryItemRow}>
+                    <Text style={styles.summaryLabelText}>已选车辆与车牌:</Text>
+                    <Text style={styles.summaryValueText}>{draftVehicle.make} {draftVehicle.model} • <Text style={{ fontWeight: '900', color: '#0f172a' }}>{draftVehicle.plateNumber}</Text> ({draftVehicle.color})</Text>
+                  </View>
+                  <View style={styles.summaryItemRowNoBorder}>
+                    <Text style={styles.summaryLabelText}>地点与钥匙交接:</Text>
+                    <Text style={styles.summaryValueText}>
+                      {selectedPropType === 'condo' ? '🏢 公寓大厦' : '🏠 独栋排屋'} • {selectedKeyOption === 'in_person' ? '🔑 面交钥匙' : '🔓 车已解锁'}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Payment Method Selector */}
+                <Text style={styles.paymentSectionHeader}>💳 选择支付通道 (Payment Method):</Text>
+                <View style={styles.paymentGridRow}>
+                  <TouchableOpacity
+                    style={[styles.payMethodChip, inlinePayment === 'tng_ewallet' && styles.payMethodChipActive]}
+                    onPress={() => setInlinePayment('tng_ewallet')}
+                  >
+                    <Text style={{ fontSize: 18 }}>💙</Text>
+                    <Text style={[styles.payMethodText, inlinePayment === 'tng_ewallet' && styles.payMethodTextActive]}>TNG eWallet</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.payMethodChip, inlinePayment === 'duitnow' && styles.payMethodChipActive]}
+                    onPress={() => setInlinePayment('duitnow')}
+                  >
+                    <Text style={{ fontSize: 18 }}>💚</Text>
+                    <Text style={[styles.payMethodText, inlinePayment === 'duitnow' && styles.payMethodTextActive]}>DuitNow QR</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.payMethodChip, inlinePayment === 'fpx' && styles.payMethodChipActive]}
+                    onPress={() => setInlinePayment('fpx')}
+                  >
+                    <Text style={{ fontSize: 18 }}>🏦</Text>
+                    <Text style={[styles.payMethodText, inlinePayment === 'fpx' && styles.payMethodTextActive]}>FPX Online</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.payMethodChip, inlinePayment === 'card' && styles.payMethodChipActive]}
+                    onPress={() => setInlinePayment('card')}
+                  >
+                    <Text style={{ fontSize: 18 }}>💳</Text>
+                    <Text style={[styles.payMethodText, inlinePayment === 'card' && styles.payMethodTextActive]}>Credit Card</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Confirm & Pay Button */}
+                <TouchableOpacity
+                  style={styles.inlinePayCtaBtn}
+                  onPress={() => {
+                    confirmBooking(inlinePayment);
+                    alert(`✅ 支付成功！已为您成功预约 ${draftService.name} 上门洗车。服务人员即将接单出发！`);
+                  }}
+                  activeOpacity={0.9}
+                >
+                  <Text style={styles.inlinePayCtaBtnText}>
+                    💳 立即支付 RM {draftService.startingPriceMYR}.00 并确认预约 →
+                  </Text>
+                </TouchableOpacity>
+              </View>
             ) : (
-              /* No Active Order Placeholder / Demo Live Status Banner */
+              /* Placeholder */
               <View style={styles.emptyActiveState}>
                 <View style={styles.emptyIconCircle}>
                   <Text style={{ fontSize: 32 }}>🛵</Text>
@@ -418,9 +515,9 @@ export default function CustomerHomeScreen() {
                 </Text>
                 <TouchableOpacity
                   style={styles.quickBookOutlineBtn}
-                  onPress={() => router.push('/customer/book')}
+                  onPress={() => setIsInlineCheckoutOpen(true)}
                 >
-                  <Text style={styles.quickBookOutlineText}>Configure Wash & Book →</Text>
+                  <Text style={styles.quickBookOutlineText}>Configure Wash & Pay →</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -1691,5 +1788,133 @@ const styles = StyleSheet.create({
     color: '#7f1d1d',
     textAlign: 'center',
     marginTop: 1,
+  },
+
+  /* INLINE CHECKOUT & MAP PANEL STYLES */
+  inlineCheckoutCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    ...shadows.medium,
+  },
+  inlineHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  inlineCheckoutHeaderTitle: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: colors.brandNavy,
+  },
+  inlineCheckoutHeaderSub: {
+    fontSize: 11,
+    color: colors.textMuted,
+    marginTop: 1,
+  },
+  liveEtaPill: {
+    backgroundColor: '#f0fdf4',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: borderRadius.xs,
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
+  },
+  liveEtaPillText: {
+    color: '#15803d',
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  inlineSummaryBox: {
+    backgroundColor: '#f8fafc',
+    borderRadius: borderRadius.lg,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    marginBottom: 14,
+  },
+  summaryItemRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingBottom: 8,
+    marginBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#cbd5e1',
+  },
+  summaryItemRowNoBorder: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  summaryLabelText: {
+    fontSize: 11,
+    color: '#64748b',
+    fontWeight: '700',
+  },
+  summaryValuePrice: {
+    fontSize: 13,
+    fontWeight: '900',
+    color: colors.primaryBlue,
+  },
+  summaryValueText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textDark,
+  },
+  paymentSectionHeader: {
+    fontSize: 12,
+    fontWeight: '900',
+    color: colors.brandNavy,
+    marginBottom: 8,
+  },
+  paymentGridRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 16,
+  },
+  payMethodChip: {
+    flex: 1,
+    minWidth: 110,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#f8fafc',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    justifyContent: 'center',
+  },
+  payMethodChipActive: {
+    backgroundColor: colors.primaryLight,
+    borderColor: colors.primaryBlue,
+    borderWidth: 2,
+  },
+  payMethodText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  payMethodTextActive: {
+    color: colors.primaryDark,
+    fontWeight: '900',
+  },
+  inlinePayCtaBtn: {
+    backgroundColor: colors.primaryBlue,
+    paddingVertical: 14,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    ...shadows.medium,
+  },
+  inlinePayCtaBtnText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '900',
   },
 });
