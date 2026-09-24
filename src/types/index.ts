@@ -12,6 +12,7 @@ export interface Vehicle {
   model: string;
   color: string;
   tier: VehicleTier;
+  colorHex?: string;
 }
 
 export interface ServiceAddon {
@@ -47,6 +48,8 @@ export interface LocationAddress {
   longitude?: number;
   isRealGps?: boolean;
   notesForWasher?: string;
+  propertyType?: 'landed' | 'condo' | 'office';
+  keyHandoverOption?: 'in_person' | 'unlocked' | 'guardhouse' | 'call_upon_arrival';
 }
 
 export type PaymentMethodType = 

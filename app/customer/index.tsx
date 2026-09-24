@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, useWindowD
 import { useRouter } from 'expo-router';
 import { useBooking } from '../../src/context/BookingContext';
 import { colors, spacing, borderRadius, shadows } from '../../src/theme';
-import { SERVICE_CATEGORIES, PROMOTIONS, SERVICE_ADDONS, SAMPLE_WASHER, SAVED_VEHICLES } from '../../src/services/mockData';
+import { SERVICE_CATEGORIES, PROMOTIONS, SERVICE_ADDONS, SAMPLE_WASHER, SAVED_VEHICLES, SAVED_LOCATIONS } from '../../src/services/mockData';
 
 export default function CustomerHomeScreen() {
   const router = useRouter();
@@ -12,12 +12,29 @@ export default function CustomerHomeScreen() {
     activeBooking, 
     draftService, setDraftService, 
     draftVehicle, setDraftVehicle,
-    draftLocation,
+    draftLocation, setDraftLocation,
     isLocatingGps, fetchGpsLocation
   } = useBooking();
 
   const isDesktop = width >= 1024;
   const isTablet = width >= 768;
+
+  // Additional detail states for booking (as requested by user screenshot)
+  const [selectedPropType, setSelectedPropType] = React.useState<'landed' | 'condo' | 'office'>('condo');
+  const [selectedKeyOption, setSelectedKeyOption] = React.useState<'in_person' | 'unlocked' | 'guardhouse'>('in_person');
+  const [parkingBayInput, setParkingBayInput] = React.useState<string>('Basement B2, Bay #45');
+  const [showSavedAddresses, setShowSavedAddresses] = React.useState<boolean>(true);
+
+  const washServicesGrid = [
+    { id: 'booking', name: '提前预订', icon: '📅', desc: 'Schedule Wash', catId: 'interior_exterior' },
+    { id: 'fleet', name: '团队出行洗', icon: '🚗', desc: 'Fleet Wash', catId: 'exterior_wash' },
+    { id: 'priority', name: '优先快速洗', icon: '⚡', desc: 'Priority Express', catId: 'exterior_wash' },
+    { id: 'plus', name: '精致内外洗', icon: '✨', desc: 'Full Detail', catId: 'interior_exterior' },
+    { id: 'steam', name: '蒸汽高温杀菌', icon: '♨️', desc: 'Thermal Steam', catId: 'steam_detailing' },
+    { id: 'ceramic', name: '漆面镀膜养护', icon: '🛡️', desc: 'Ceramic Coating', catId: 'steam_detailing' },
+    { id: 'delivery', name: '洗车用品送货', icon: '🚚', desc: 'Product Delivery', catId: 'low_water_eco' },
+    { id: 'view_all', name: '查看全部', icon: '📱', desc: 'View All Services', catId: 'interior_exterior' },
+  ];
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -43,110 +60,215 @@ export default function CustomerHomeScreen() {
             <Text style={styles.heroMainTitle}>
               Professional Detailing Delivered to Your Parking Bay
             </Text>
-            <Text style={styles.heroMainSub}>
-              Low-water eco wash & wax at your condo basement, landed home, office or shopping mall.
-            </Text>
 
-            {/* Quick Location Bar */}
-            <View style={styles.locationSelectorCard}>
-              <View style={styles.locPinBox}>
+            {/* ============================================================ */}
+            {/* 🟢 绿色框区域: 地图、常用地址、已选车辆车牌与车身颜色、钥匙与停车场设置 */}
+            {/* ============================================================ */}
+            <View style={styles.greenSectionBox}>
+              <View style={styles.sectionBadgeGreen}>
+                <Text style={styles.sectionBadgeGreenText}>🟢 地图定位、已选车辆车牌车色与预约车位钥匙</Text>
+              </View>
+
+              {/* 1. Address / Map Search Bar */}
+              <View style={styles.addressSearchBarCard}>
                 <Text style={{ fontSize: 18 }}>📍</Text>
-              </View>
-              <View style={{ flex: 1, marginLeft: 10 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Text style={styles.locHeaderTag}>WASH LOCATION</Text>
-                  {draftLocation?.isRealGps && (
-                    <View style={{ backgroundColor: colors.successLight, paddingHorizontal: 6, paddingVertical: 2, borderRadius: borderRadius.xs }}>
-                      <Text style={{ color: colors.successDark, fontSize: 8, fontWeight: '900' }}>GPS ACTIVE 🟢</Text>
-                    </View>
-                  )}
-                </View>
-                <Text style={styles.locAddressText} numberOfLines={1}>
-                  {draftLocation?.addressLine1 || 'Jalan Telawi 3, Bangsar'}, {draftLocation?.city || 'Kuala Lumpur'}
-                </Text>
-                {draftLocation?.condoBuildingName && (
-                  <Text style={styles.locBaySubText}>
-                    🏢 {draftLocation.condoBuildingName} ({draftLocation.unitParkingBay || 'Bay B2-#45'})
+                <View style={{ flex: 1, marginLeft: 8 }}>
+                  <Text style={styles.searchBarLabel}>去哪里上门洗车？ (Search Wash Location)</Text>
+                  <Text style={styles.searchBarAddress} numberOfLines={1}>
+                    {draftLocation?.addressLine1 || 'Jalan Telawi 3, Bangsar, KL'}
                   </Text>
-                )}
-              </View>
-
-              <TouchableOpacity
-                style={styles.gpsLocateBtn}
-                onPress={() => fetchGpsLocation()}
-                disabled={isLocatingGps}
-              >
-                <Text style={styles.gpsLocateBtnText}>
-                  {isLocatingGps ? 'Locating...' : '📍 GPS Auto-Detect'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Vehicle Garage Quick Switcher */}
-            <View style={styles.garageSection}>
-              <View style={styles.garageHeaderRow}>
-                <Text style={styles.sectionHeaderLabel}>SELECT VEHICLE FROM GARAGE</Text>
-                <TouchableOpacity onPress={() => router.push('/customer/profile')}>
-                  <Text style={styles.garageManageLink}>Manage Garage →</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.gpsAutoBtn}
+                  onPress={() => fetchGpsLocation()}
+                  disabled={isLocatingGps}
+                >
+                  <Text style={styles.gpsAutoBtnText}>
+                    {isLocatingGps ? '定位中...' : '📍 GPS 自动定位'}
+                  </Text>
                 </TouchableOpacity>
               </View>
 
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.vehicleScroll}>
-                {SAVED_VEHICLES.map((v) => {
-                  const isSelected = draftVehicle.id === v.id;
+              {/* Saved Address Pickers List (McDonald's, DNP大厦, 新山成功滨水酒店, Bangsar) */}
+              <View style={styles.savedLocationPickerGrid}>
+                {SAVED_LOCATIONS.map((loc) => {
+                  const isLocSelected = draftLocation?.id === loc.id;
                   return (
                     <TouchableOpacity
-                      key={v.id}
-                      style={[styles.vehicleChip, isSelected && styles.vehicleChipSelected]}
-                      onPress={() => setDraftVehicle(v)}
+                      key={loc.id}
+                      style={[styles.locationPickItem, isLocSelected && styles.locationPickItemActive]}
+                      onPress={() => setDraftLocation(loc)}
                       activeOpacity={0.85}
                     >
-                      <Text style={{ fontSize: 18 }}>🚗</Text>
-                      <View style={{ marginLeft: 8 }}>
-                        <Text style={[styles.vehiclePlateText, isSelected && styles.vehiclePlateSelected]}>
-                          {v.plateNumber}
+                      <Text style={{ fontSize: 16 }}>{isLocSelected ? '🟢' : '📍'}</Text>
+                      <View style={{ flex: 1, marginLeft: 8 }}>
+                        <Text style={[styles.locationPickTitle, isLocSelected && styles.locationPickTitleActive]} numberOfLines={1}>
+                          {loc.label}
                         </Text>
-                        <Text style={styles.vehicleModelSub}>
-                          {v.make} {v.model}
+                        <Text style={styles.locationPickSub} numberOfLines={1}>
+                          {loc.addressLine1}
                         </Text>
                       </View>
-                      {isSelected && (
-                        <View style={styles.selectedCheckCircle}>
-                          <Text style={styles.checkIcon}>✓</Text>
-                        </View>
-                      )}
                     </TouchableOpacity>
                   );
                 })}
-              </ScrollView>
-            </View>
+              </View>
 
-            {/* Service Package Selector Grid */}
-            <View style={styles.serviceSelectorBox}>
-              <Text style={styles.sectionHeaderLabel}>SELECT WASH PACKAGE</Text>
-              <View style={styles.packagePillsGrid}>
-                {SERVICE_CATEGORIES.map((cat) => {
-                  const isSelected = draftService.id === cat.id;
-                  return (
+              {/* 2. Vehicle Garage Quick Switcher with License Plate & Color Badge */}
+              <View style={styles.garageSectionGreen}>
+                <View style={styles.garageHeaderRow}>
+                  <Text style={styles.sectionHeaderLabelGreen}>已选车辆与车牌车身颜色 (VEHICLE & COLOR)</Text>
+                  <TouchableOpacity onPress={() => router.push('/customer/profile')}>
+                    <Text style={styles.garageManageLink}>管理车库 →</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.vehicleScroll}>
+                  {SAVED_VEHICLES.map((v) => {
+                    const isSelected = draftVehicle.id === v.id;
+                    return (
+                      <TouchableOpacity
+                        key={v.id}
+                        style={[styles.vehicleChip, isSelected && styles.vehicleChipSelectedGreen]}
+                        onPress={() => setDraftVehicle(v)}
+                        activeOpacity={0.85}
+                      >
+                        <Text style={{ fontSize: 20 }}>🚗</Text>
+                        <View style={{ marginLeft: 8 }}>
+                          <View style={styles.plateTagPill}>
+                            <Text style={styles.plateTagText}>{v.plateNumber}</Text>
+                          </View>
+                          <Text style={styles.vehicleModelSubBold}>
+                            {v.make} {v.model}
+                          </Text>
+                          <View style={styles.colorBadgeRow}>
+                            <Text style={styles.colorBadgeText}>{v.color || '珍珠白 (Pearl White)'}</Text>
+                          </View>
+                        </View>
+                        {isSelected && (
+                          <View style={styles.selectedCheckCircleGreen}>
+                            <Text style={styles.checkIcon}>✓</Text>
+                          </View>
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+
+              {/* 3. Property Type, Key Handover (拿钥匙) & Parking Bay Controls */}
+              <View style={styles.accessControlsCard}>
+                
+                {/* Property / Service Location Type */}
+                <View style={styles.controlRowBlock}>
+                  <Text style={styles.controlBlockTitle}>服务地点类型 (Property Type):</Text>
+                  <View style={styles.segmentedButtonsRow}>
                     <TouchableOpacity
-                      key={cat.id}
-                      style={[styles.packagePillItem, isSelected && styles.packagePillSelected]}
-                      onPress={() => setDraftService(cat)}
-                      activeOpacity={0.85}
+                      style={[styles.segBtn, selectedPropType === 'condo' && styles.segBtnActive]}
+                      onPress={() => setSelectedPropType('condo')}
                     >
-                      <Text style={styles.packagePillIcon}>{cat.icon}</Text>
-                      <View style={{ flex: 1, marginLeft: 8 }}>
-                        <Text style={[styles.packagePillName, isSelected && styles.packagePillNameActive]}>
-                          {cat.name}
-                        </Text>
-                        <Text style={styles.packagePillMeta}>{cat.durationRange}</Text>
-                      </View>
-                      <Text style={[styles.packagePillPrice, isSelected && styles.packagePillPriceActive]}>
-                        RM{cat.startingPriceMYR}
+                      <Text style={[styles.segBtnText, selectedPropType === 'condo' && styles.segBtnTextActive]}>
+                        🏢 住宅公寓/大厦
                       </Text>
                     </TouchableOpacity>
-                  );
-                })}
+
+                    <TouchableOpacity
+                      style={[styles.segBtn, selectedPropType === 'landed' && styles.segBtnActive]}
+                      onPress={() => setSelectedPropType('landed')}
+                    >
+                      <Text style={[styles.segBtnText, selectedPropType === 'landed' && styles.segBtnTextActive]}>
+                        🏠 上门独栋/排屋
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.segBtn, selectedPropType === 'office' && styles.segBtnActive]}
+                      onPress={() => setSelectedPropType('office')}
+                    >
+                      <Text style={[styles.segBtnText, selectedPropType === 'office' && styles.segBtnTextActive]}>
+                        🏬 商业广场
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Key Collection / Handover Option (预定要拿钥匙) */}
+                <View style={styles.controlRowBlock}>
+                  <Text style={styles.controlBlockTitle}>🔑 车钥匙交接方式 (Key Collection / Handover):</Text>
+                  <View style={styles.segmentedButtonsRow}>
+                    <TouchableOpacity
+                      style={[styles.segBtnKey, selectedKeyOption === 'in_person' && styles.segBtnKeyActive]}
+                      onPress={() => setSelectedKeyOption('in_person')}
+                    >
+                      <Text style={[styles.segBtnText, selectedKeyOption === 'in_person' && styles.segBtnTextActive]}>
+                        🔑 现场面交车钥匙
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.segBtnKey, selectedKeyOption === 'unlocked' && styles.segBtnKeyActive]}
+                      onPress={() => setSelectedKeyOption('unlocked')}
+                    >
+                      <Text style={[styles.segBtnText, selectedKeyOption === 'unlocked' && styles.segBtnTextActive]}>
+                        🔓 车已解密/无钥匙
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.segBtnKey, selectedKeyOption === 'guardhouse' && styles.segBtnKeyActive]}
+                      onPress={() => setSelectedKeyOption('guardhouse')}
+                    >
+                      <Text style={[styles.segBtnText, selectedKeyOption === 'guardhouse' && styles.segBtnTextActive]}>
+                        📫 保安处/信箱留钥匙
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Parking Bay Details */}
+                <View style={styles.controlRowBlockNoBorder}>
+                  <Text style={styles.controlBlockTitle}>🅿️ 停车场及车位编号 (Parking Bay Location):</Text>
+                  <View style={styles.parkingInputBox}>
+                    <Text style={{ fontSize: 16 }}>🅿️</Text>
+                    <Text style={styles.parkingInputText}>
+                      {draftLocation?.unitParkingBay || parkingBayInput}
+                    </Text>
+                  </View>
+                </View>
+
+              </View>
+
+            </View>
+
+            {/* ============================================================ */}
+            {/* 🔴 红色框区域: 满足您一切洗车需求的各种门到门服务 (8格网图) */}
+            {/* ============================================================ */}
+            <View style={styles.redSectionBox}>
+              <View style={styles.sectionHeaderRowRed}>
+                <View style={styles.sectionBadgeRed}>
+                  <Text style={styles.sectionBadgeRedText}>🔴 满足您一切需求的各种门到门洗车服务</Text>
+                </View>
+              </View>
+
+              <View style={styles.grabServices8Grid}>
+                {washServicesGrid.map((item) => (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={styles.grabServiceCardItem}
+                    onPress={() => {
+                      const matchedCat = SERVICE_CATEGORIES.find(c => c.id === item.catId) || SERVICE_CATEGORIES[0];
+                      setDraftService(matchedCat);
+                      router.push('/customer/book');
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <View style={styles.grabServiceIconCircle}>
+                      <Text style={{ fontSize: 26 }}>{item.icon}</Text>
+                    </View>
+                    <Text style={styles.grabServiceItemTitle}>{item.name}</Text>
+                    <Text style={styles.grabServiceItemSub}>{item.desc}</Text>
+                  </TouchableOpacity>
+                ))}
               </View>
             </View>
 
@@ -165,7 +287,7 @@ export default function CustomerHomeScreen() {
                 onPress={() => router.push('/customer/book')}
                 activeOpacity={0.9}
               >
-                <Text style={styles.mainBookBtnText}>Book Detailer Now →</Text>
+                <Text style={styles.mainBookBtnText}>确认并立即预约洗车 →</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1294,5 +1416,280 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '900',
     color: colors.primaryDark,
+  },
+
+  /* 🟢 GREEN SECTION STYLES (MAP, VEHICLE PLATE & COLOR, KEY HANDOVER, PARKING BAY) */
+  greenSectionBox: {
+    borderWidth: 2,
+    borderColor: '#22c55e',
+    backgroundColor: '#f0fdf4',
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    ...shadows.soft,
+  },
+  sectionBadgeGreen: {
+    backgroundColor: '#15803d',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: borderRadius.xs,
+    marginBottom: 12,
+    alignSelf: 'flex-start',
+  },
+  sectionBadgeGreenText: {
+    color: '#ffffff',
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  addressSearchBarCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: borderRadius.lg,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
+    marginBottom: 10,
+  },
+  searchBarLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#15803d',
+  },
+  searchBarAddress: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textDark,
+  },
+  gpsAutoBtn: {
+    backgroundColor: '#dcfce7',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: borderRadius.pill,
+  },
+  gpsAutoBtnText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#15803d',
+  },
+  savedLocationPickerGrid: {
+    gap: 6,
+    marginBottom: 12,
+  },
+  locationPickItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: borderRadius.md,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  locationPickItemActive: {
+    borderColor: '#22c55e',
+    backgroundColor: '#ecfdf5',
+  },
+  locationPickTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: colors.textDark,
+  },
+  locationPickTitleActive: {
+    color: '#15803d',
+  },
+  locationPickSub: {
+    fontSize: 10,
+    color: colors.textMuted,
+  },
+  garageSectionGreen: {
+    marginBottom: 12,
+  },
+  sectionHeaderLabelGreen: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: '#15803d',
+    letterSpacing: 0.5,
+  },
+  vehicleChipSelectedGreen: {
+    borderColor: '#22c55e',
+    backgroundColor: '#ecfdf5',
+    borderWidth: 2,
+  },
+  selectedCheckCircleGreen: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#22c55e',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 6,
+  },
+  plateTagPill: {
+    backgroundColor: '#0f172a',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+    marginBottom: 2,
+  },
+  plateTagText: {
+    color: '#ffffff',
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  vehicleModelSubBold: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.textDark,
+  },
+  colorBadgeRow: {
+    marginTop: 2,
+  },
+  colorBadgeText: {
+    fontSize: 10,
+    color: '#64748b',
+    fontWeight: '700',
+  },
+  accessControlsCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: borderRadius.lg,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
+  },
+  controlRowBlock: {
+    marginBottom: 10,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  controlRowBlockNoBorder: {
+    marginBottom: 0,
+  },
+  controlBlockTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.textDark,
+    marginBottom: 6,
+  },
+  segmentedButtonsRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  segBtn: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+  },
+  segBtnActive: {
+    backgroundColor: '#dcfce7',
+    borderColor: '#22c55e',
+  },
+  segBtnKey: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+  },
+  segBtnKeyActive: {
+    backgroundColor: '#dbeafe',
+    borderColor: '#3b82f6',
+  },
+  segBtnText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#475569',
+    textAlign: 'center',
+  },
+  segBtnTextActive: {
+    color: '#0f172a',
+    fontWeight: '900',
+  },
+  parkingInputBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#f8fafc',
+    padding: 8,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+  },
+  parkingInputText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: colors.textDark,
+  },
+
+  /* 🔴 RED SECTION STYLES (8-GRID WASH SERVICES) */
+  redSectionBox: {
+    borderWidth: 2,
+    borderColor: '#ef4444',
+    backgroundColor: '#fef2f2',
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    ...shadows.soft,
+  },
+  sectionHeaderRowRed: {
+    marginBottom: 12,
+  },
+  sectionBadgeRed: {
+    backgroundColor: '#dc2626',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: borderRadius.xs,
+    alignSelf: 'flex-start',
+  },
+  sectionBadgeRedText: {
+    color: '#ffffff',
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  grabServices8Grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  grabServiceCardItem: {
+    width: '23%',
+    minWidth: 70,
+    backgroundColor: '#ffffff',
+    borderRadius: borderRadius.lg,
+    padding: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#fecaca',
+    ...shadows.subtle,
+  },
+  grabServiceIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#fff1f2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  grabServiceItemTitle: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: '#991b1b',
+    textAlign: 'center',
+  },
+  grabServiceItemSub: {
+    fontSize: 9,
+    color: '#7f1d1d',
+    textAlign: 'center',
+    marginTop: 1,
   },
 });
