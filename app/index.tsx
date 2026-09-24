@@ -12,8 +12,8 @@ export default function LoginEntranceScreen() {
   const isDesktop = width >= 1024;
   const isTablet = width >= 768;
 
-  // Active Channel Tab ('customer' | 'washer')
-  const [activeChannel, setActiveChannel] = useState<'customer' | 'washer'>('customer');
+  // Active Channel Tab ('customer' | 'washer' | 'both')
+  const [activeChannel, setActiveChannel] = useState<'customer' | 'washer' | 'both'>('customer');
 
   // Form Inputs
   const [custInput, setCustInput] = useState('+60 12-345 6789');
@@ -59,7 +59,7 @@ export default function LoginEntranceScreen() {
         {/* DUAL CHANNEL LOGIN CONTAINER */}
         <View style={[styles.portalContainerCard, isDesktop && styles.portalContainerDesktop]}>
 
-          {/* CHANNEL SELECTOR TABS (MOBILE & TABLET) */}
+          {/* CHANNEL SELECTOR TABS (SWITCHER ABOVE LOGIN PORTAL) */}
           <View style={styles.channelTabRow}>
             <TouchableOpacity
               style={[styles.channelTabBtn, activeChannel === 'customer' && styles.channelTabActiveCustomer]}
@@ -92,13 +92,31 @@ export default function LoginEntranceScreen() {
                 </Text>
               </View>
             </TouchableOpacity>
+
+            {isDesktop && (
+              <TouchableOpacity
+                style={[styles.channelTabBtn, activeChannel === 'both' && styles.channelTabActiveBoth]}
+                onPress={() => setActiveChannel('both')}
+                activeOpacity={0.9}
+              >
+                <Text style={styles.channelTabIcon}>⚖️</Text>
+                <View>
+                  <Text style={[styles.channelTabTitle, activeChannel === 'both' && styles.channelTextActive]}>
+                    双端通道平铺
+                  </Text>
+                  <Text style={[styles.channelTabSub, activeChannel === 'both' && styles.channelSubActive]}>
+                    Side-by-Side View
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            )}
           </View>
 
-          {/* DUAL LOGIN FORM CARDS (SIDE-BY-SIDE ON DESKTOP, SWITCHED ON MOBILE) */}
-          <View style={[styles.formsGrid, isDesktop && styles.formsGridDesktop]}>
+          {/* DUAL LOGIN FORM CARDS (PORTAL VIEWS) */}
+          <View style={[styles.formsGrid, (isDesktop && activeChannel === 'both') && styles.formsGridDesktop]}>
 
             {/* CHANNEL 1: CUSTOMER LOGIN CARD */}
-            {(isDesktop || activeChannel === 'customer') && (
+            {(activeChannel === 'customer' || activeChannel === 'both') && (
               <View style={[styles.formCard, isDesktop && styles.formCardDesktop, activeChannel === 'customer' && styles.formCardActiveBorder]}>
                 <View style={styles.formCardHeader}>
                   <View style={styles.channelIconCircle}>
@@ -160,7 +178,7 @@ export default function LoginEntranceScreen() {
             )}
 
             {/* CHANNEL 2: CAR WASHER / DETAILER LOGIN CARD */}
-            {(isDesktop || activeChannel === 'washer') && (
+            {(activeChannel === 'washer' || activeChannel === 'both') && (
               <View style={[styles.formCard, isDesktop && styles.formCardDesktop, activeChannel === 'washer' && styles.formCardActiveWasherBorder]}>
                 <View style={styles.formCardHeader}>
                   <View style={[styles.channelIconCircle, styles.washerIconCircle]}>
@@ -356,6 +374,9 @@ const styles = StyleSheet.create({
   },
   channelTabActiveWasher: {
     backgroundColor: colors.washerAccent,
+  },
+  channelTabActiveBoth: {
+    backgroundColor: colors.brandNavy,
   },
   channelTabIcon: {
     fontSize: 22,
