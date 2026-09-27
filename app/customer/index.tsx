@@ -5,6 +5,7 @@ import { useBooking } from '../../src/context/BookingContext';
 import { colors, spacing, borderRadius, shadows } from '../../src/theme';
 import { SERVICE_CATEGORIES, PROMOTIONS, SERVICE_ADDONS, SAMPLE_WASHER, SAVED_VEHICLES, SAVED_LOCATIONS } from '../../src/services/mockData';
 import MockMapContainer from '../../src/components/MockMapContainer';
+import GoogleMapContainer from '../../src/components/GoogleMapContainer';
 import { PaymentMethodType } from '../../src/types';
 
 export default function CustomerHomeScreen() {
@@ -427,13 +428,16 @@ export default function CustomerHomeScreen() {
                   </View>
                 </View>
 
-                {/* Live Mock Map Container */}
-                <MockMapContainer
+                {/* Live Interactive Google Map Container */}
+                <GoogleMapContainer
+                  latitude={draftLocation?.latitude || 3.1293}
+                  longitude={draftLocation?.longitude || 101.6784}
                   locationName={draftLocation?.label || 'Bangsar Residence'}
+                  address={`${draftLocation?.addressLine1 || 'Jalan Telawi 3, Bangsar'}, ${draftLocation?.city || 'Kuala Lumpur'}`}
                   condoBuildingName={draftLocation?.condoBuildingName}
                   unitParkingBay={draftLocation?.unitParkingBay || parkingBayInput}
-                  cityName={draftLocation?.city || 'Kuala Lumpur'}
-                  stateName={draftLocation?.state || 'Kuala Lumpur'}
+                  height={220}
+                  showOpenInAppBtn={true}
                 />
 
                 {/* Order Summary Box */}
