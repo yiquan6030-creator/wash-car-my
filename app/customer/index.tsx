@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, useWindowDimensions, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useBooking } from '../../src/context/BookingContext';
 import { colors, spacing, borderRadius, shadows } from '../../src/theme';
@@ -7,6 +7,53 @@ import { SERVICE_CATEGORIES, PROMOTIONS, SERVICE_ADDONS, SAMPLE_WASHER, SAVED_VE
 import MockMapContainer from '../../src/components/MockMapContainer';
 import GoogleMapContainer from '../../src/components/GoogleMapContainer';
 import { PaymentMethodType } from '../../src/types';
+
+const MALAYSIA_PRESET_LOCATIONS = [
+  {
+    id: 'preset_tebrau',
+    label: '📍 新山地不佬 Mukim Tebrau / Mount Austin',
+    addressLine1: 'Mukim Tebrau, 地不佬, 81800, 新山, 柔佛, Malaysia',
+    city: 'Johor Bahru',
+    state: 'Johor',
+    latitude: 1.5450,
+    longitude: 103.8050,
+    condoBuildingName: 'Mount Austin Commercial Area',
+    unitParkingBay: '露天 08号车位',
+  },
+  {
+    id: 'preset_mcd_tiram',
+    label: '📍 McDonald\'s Ulu Tiram DT (地不佬路)',
+    addressLine1: 'McDonald\'s Ulu Tiram DT, Mukim Tebrau, 81800 JB',
+    city: 'Johor Bahru',
+    state: 'Johor',
+    latitude: 1.5992,
+    longitude: 103.8188,
+    condoBuildingName: 'McDonald\'s Drive-Thru Parking',
+    unitParkingBay: 'Drive-Thru 露天车位 #02',
+  },
+  {
+    id: 'preset_dnp',
+    label: '📍 新山 DNP 大厦 (Plaza DNP)',
+    addressLine1: 'Plaza DNP, Jalan Dato Abdullah Tahir, 新山',
+    city: 'Johor Bahru',
+    state: 'Johor',
+    latitude: 1.4746,
+    longitude: 103.7622,
+    condoBuildingName: 'Plaza DNP Block A',
+    unitParkingBay: 'B1层 12号车位',
+  },
+  {
+    id: 'preset_bangsar',
+    label: '📍 吉隆坡 Bangsar Telawi 3',
+    addressLine1: 'Jalan Telawi 3, Bangsar, Kuala Lumpur',
+    city: 'Kuala Lumpur',
+    state: 'Kuala Lumpur',
+    latitude: 3.1293,
+    longitude: 101.6784,
+    condoBuildingName: 'The Residence Condo',
+    unitParkingBay: 'B2层 #45车位',
+  },
+];
 
 export default function CustomerHomeScreen() {
   const router = useRouter();
@@ -33,6 +80,18 @@ export default function CustomerHomeScreen() {
   const [selectedKeyOption, setSelectedKeyOption] = React.useState<'in_person' | 'unlocked' | 'guardhouse'>('in_person');
   const [parkingBayInput, setParkingBayInput] = React.useState<string>('Basement B2, Bay #45');
   const [showSavedAddresses, setShowSavedAddresses] = React.useState<boolean>(true);
+  
+  // Interactive map picker & custom address search states
+  const [customAddressInput, setCustomAddressInput] = React.useState<string>(
+    draftLocation?.addressLine1 || 'Mukim Tebrau, 地不佬, 81800, 新山, 柔佛, Malaysia'
+  );
+  const [showGreenMapPicker, setShowGreenMapPicker] = React.useState<boolean>(true);
+
+  React.useEffect(() => {
+    if (draftLocation?.addressLine1) {
+      setCustomAddressInput(draftLocation.addressLine1);
+    }
+  }, [draftLocation]);
 
   const washServicesGrid = [
     { id: 'booking', name: '提前预订', icon: '📅', desc: 'Schedule Wash', catId: 'interior_exterior' },
@@ -78,24 +137,110 @@ export default function CustomerHomeScreen() {
                 <Text style={styles.sectionBadgeGreenText}>{t('greenSectionBadge')}</Text>
               </View>
 
-              {/* 1. Address / Map Search Bar */}
+              {/* 1. Address Search & Manual Edit Bar */}
               <View style={styles.addressSearchBarCard}>
                 <Text style={{ fontSize: 18 }}>📍</Text>
                 <View style={{ flex: 1, marginLeft: 8 }}>
                   <Text style={styles.searchBarLabel}>{t('searchBarLabel')}</Text>
-                  <Text style={styles.searchBarAddress} numberOfLines={1}>
-                    {draftLocation?.addressLine1 || 'Jalan Telawi 3, Bangsar, KL'}
-                  </Text>
+                  <TextInput
+                    style={styles.searchAddressInput}
+                    value={customAddressInput}
+                    onChangeText={(text) => {
+                      setCustomAddressInput(text);
+                      if (draftLocation) {
+                        setDraftLocation({
+                          ...draftLocation,
+                          addressLine1: text,
+                        });
+                      }
+                    }}
+                    placeholder="输入详细地址、大厦名称或路名 (Search/Edit address)..."
+                    placeholderTextColor="#94a3b8"
+                  />
                 </View>
                 <TouchableOpacity
                   style={styles.gpsAutoBtn}
-                  onPress={() => fetchGpsLocation()}
+                  onPress={async () => {
+                    const loc = await fetchGpsLocation();
+                    if (loc) {
+                      setCustomAddressInput(loc.addressLine1);
+                    }
+                  }}
                   disabled={isLocatingGps}
                 >
                   <Text style={styles.gpsAutoBtnText}>
                     {isLocatingGps ? t('locating') : t('gpsAutoBtn')}
                   </Text>
                 </TouchableOpacity>
+              </View>
+
+              {/* 🗺️ INTERACTIVE GOOGLE MAP LOCATION PICKER DIRECTLY INSIDE GREEN BOX */}
+              <View style={styles.greenBoxMapWrapper}>
+                <View style={styles.greenBoxMapHeader}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={styles.greenBoxMapTitle}>🗺️ Google 地图自选/微调点位 (Interactive Map Picker)</Text>
+                    <View style={styles.liveGpsTag}>
+                      <Text style={styles.liveGpsTagText}>LIVE MAP</Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.toggleMapBtn}
+                    onPress={() => setShowGreenMapPicker(!showGreenMapPicker)}
+                  >
+                    <Text style={styles.toggleMapBtnText}>
+                      {showGreenMapPicker ? '收起地图 ▲' : '展开地图 ▼'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {showGreenMapPicker && (
+                  <>
+                    <GoogleMapContainer
+                      latitude={draftLocation?.latitude || 1.5450}
+                      longitude={draftLocation?.longitude || 103.8050}
+                      locationName={draftLocation?.label || '自选洗车地点'}
+                      address={draftLocation?.addressLine1 || customAddressInput}
+                      condoBuildingName={draftLocation?.condoBuildingName}
+                      unitParkingBay={draftLocation?.unitParkingBay || parkingBayInput}
+                      height={200}
+                      showOpenInAppBtn={true}
+                    />
+
+                    {/* Quick Selection Location Pills */}
+                    <Text style={styles.presetSectionTitle}>📍 快捷点击自选/切换地图热门定位点 (Preset Map Spots):</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.presetPillsScroll}>
+                      {MALAYSIA_PRESET_LOCATIONS.map((preset) => {
+                        const isSelected = draftLocation?.latitude === preset.latitude;
+                        return (
+                          <TouchableOpacity
+                            key={preset.id}
+                            style={[styles.presetPill, isSelected && styles.presetPillActive]}
+                            onPress={() => {
+                              setDraftLocation({
+                                id: preset.id,
+                                label: preset.label,
+                                addressLine1: preset.addressLine1,
+                                city: preset.city,
+                                state: preset.state,
+                                postcode: '81800',
+                                latitude: preset.latitude,
+                                longitude: preset.longitude,
+                                condoBuildingName: preset.condoBuildingName,
+                                unitParkingBay: preset.unitParkingBay,
+                                isRealGps: true,
+                              });
+                              setCustomAddressInput(preset.addressLine1);
+                            }}
+                          >
+                            <Text style={[styles.presetPillText, isSelected && styles.presetPillTextActive]}>
+                              {preset.label}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </ScrollView>
+                  </>
+                )}
               </View>
 
               {/* Saved Address Pickers List */}
@@ -106,7 +251,10 @@ export default function CustomerHomeScreen() {
                     <TouchableOpacity
                       key={loc.id}
                       style={[styles.locationPickItem, isLocSelected && styles.locationPickItemActive]}
-                      onPress={() => setDraftLocation(loc)}
+                      onPress={() => {
+                        setDraftLocation(loc);
+                        setCustomAddressInput(loc.addressLine1);
+                      }}
                       activeOpacity={0.85}
                     >
                       <Text style={{ fontSize: 16 }}>{isLocSelected ? '🟢' : '📍'}</Text>
@@ -1920,6 +2068,87 @@ const styles = StyleSheet.create({
   inlinePayCtaBtnText: {
     color: '#ffffff',
     fontSize: 14,
+    fontWeight: '900',
+  },
+  searchAddressInput: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textDark,
+    paddingVertical: 2,
+    paddingHorizontal: 0,
+  },
+  greenBoxMapWrapper: {
+    backgroundColor: '#ffffff',
+    borderRadius: borderRadius.lg,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
+    marginBottom: 12,
+  },
+  greenBoxMapHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  greenBoxMapTitle: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: '#15803d',
+  },
+  liveGpsTag: {
+    backgroundColor: '#dcfce7',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  liveGpsTagText: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: '#166534',
+  },
+  toggleMapBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    backgroundColor: '#f1f5f9',
+    borderRadius: 4,
+  },
+  toggleMapBtnText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#475569',
+  },
+  presetSectionTitle: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#15803d',
+    marginTop: 8,
+    marginBottom: 6,
+  },
+  presetPillsScroll: {
+    flexDirection: 'row',
+  },
+  presetPill: {
+    backgroundColor: '#f8fafc',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: borderRadius.pill,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    marginRight: 6,
+  },
+  presetPillActive: {
+    backgroundColor: '#dcfce7',
+    borderColor: '#22c55e',
+    borderWidth: 1.5,
+  },
+  presetPillText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  presetPillTextActive: {
+    color: '#15803d',
     fontWeight: '900',
   },
 });
