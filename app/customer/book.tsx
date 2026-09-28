@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, useWindowDimensions } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useBooking } from '../../src/context/BookingContext';
 import { colors, spacing, borderRadius, shadows } from '../../src/theme';
 import {
@@ -15,6 +15,7 @@ import GoogleMapContainer from '../../src/components/GoogleMapContainer';
 
 export default function MultiStepBookingScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ step?: string }>();
   const { width } = useWindowDimensions();
   const {
     draftService, setDraftService,
@@ -30,7 +31,7 @@ export default function MultiStepBookingScreen() {
   } = useBooking();
 
   const isDesktop = width >= 1024;
-  const [currentStep, setCurrentStep] = useState<number>(1);
+  const [currentStep, setCurrentStep] = useState<number>(params.step === "4" ? 4 : 1);
   const [promoInput, setPromoInput] = useState<string>('');
   const [selectedPayment, setSelectedPayment] = useState<PaymentMethodType>('cash');
   const [washerNotes, setWasherNotes] = useState<string>(draftLocation.notesForWasher || '');

@@ -29,6 +29,7 @@ interface LocalState {
     messages: Message[];
     profile: UserProfile;
     language: Language;
+    selectedLocationId?: string;
 }
 const initial: LocalState = { version: 2, orders: [], vehicles: SAVED_VEHICLES, locations: SAVED_LOCATIONS, messages: [], profile: { name: '本地体验用户', phone: '', email: '', role: 'customer' }, language: 'zh' };
 function useBookingState() {
@@ -50,7 +51,7 @@ function useBookingState() {
                 ref.current = saved;
                 setData(saved);
                 setDraftVehicle(saved.vehicles[0]);
-                setDraftLocation(saved.locations[0]);
+                _setDraftLocation(saved.locations.find(l => l.id === saved.selectedLocationId) || saved.locations[0]);
             }
         }).catch(() => { if (mounted)
             setStorageError('无法读取本地存档，当前修改不会覆盖旧存档。请检查浏览器存储权限。'); }).finally(() => { if (mounted)
@@ -67,7 +68,8 @@ function useBookingState() {
     const activeBooking = (role === 'washer' ? data.orders.find(b => b.washer && isOpen(b)) : data.orders.find(b => b.id === selectedId)) || data.orders.find(isOpen) || (role === 'washer' ? data.orders.find(b => b.status === 'completed') : null) || null;
     const [draftService, setDraftService] = useState<ServiceCategory>(SERVICE_CATEGORIES[1]);
     const [draftVehicle, setDraftVehicle] = useState<Vehicle>(SAVED_VEHICLES[0]);
-    const [draftLocation, setDraftLocation] = useState<LocationAddress>(SAVED_LOCATIONS[0]);
+    const [draftLocation, _setDraftLocation] = useState<LocationAddress>(SAVED_LOCATIONS[0]);
+    const setDraftLocation = (location: LocationAddress) => { _setDraftLocation(location); commit(s => ({ ...s, selectedLocationId: location.id })); };
     const [draftBookingType, setDraftBookingType] = useState<'now' | 'scheduled'>('now');
     const [scheduledDate, setScheduledDate] = useState(new Date(Date.now() + 86400000 + 8 * 3600000).toISOString().slice(0, 10));
     const [scheduledTime, setScheduledTime] = useState('10:00');
@@ -106,7 +108,7 @@ function useBookingState() {
         if (draftLocation.id === id)
             setDraftLocation(ref.current.locations[0]);
     };
-    const fetchGpsLocation = async () => {
+    const fetchGpsLocation = async (applyToDraft = true) => {
         setIsLocatingGps(true);
         try {
             const permission = await Location.requestForegroundPermissionsAsync();
@@ -117,7 +119,7 @@ function useBookingState() {
             const places = await Location.reverseGeocodeAsync({ latitude, longitude }).catch(() => []);
             const p = places[0];
             const item: LocationAddress = { id: `gps-${Date.now()}`, label: '当前位置', addressLine1: [p?.streetNumber, p?.street || p?.name].filter(Boolean).join(' '), city: p?.city || '', state: p?.region || '', postcode: p?.postalCode || '', latitude, longitude, isRealGps: true };
-            setDraftLocation(item);
+            if (applyToDraft) setDraftLocation(item);
             return item;
         }
         catch {

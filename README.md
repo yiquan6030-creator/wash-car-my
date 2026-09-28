@@ -54,3 +54,15 @@ Windows 构建较慢时：`npx expo export --platform web --max-workers 2`。
 - 手机窄屏入口布局已检查；原生平台尚未真机测试。
 
 本地预览：先构建，再运行 `node scripts/preview.cjs`，访问 http://127.0.0.1:4173。
+
+## 地图首页（Grab 式交互）
+
+- Web 首页使用 Leaflet / OpenStreetMap 实际街道地图，支持拖动、缩放、点击和方向键选点。
+- 搜索马来西亚地名、常用地址、GPS 定位和手动填址；位置需确认后才用于预约。
+- 地图选点保留精确停车坐标，不替换成地理编码返回的道路中心；网络错误可手动补充详细地址。
+- 底部选择车辆、洗车套餐及立即/预约服务，价格跟随车型；下一步进入时间选择。
+- 最近选择的已保存地址可在重新进入时恢复。
+- 附近真实师傅位置和实时调度尚未接入，界面不显示虚构师傅坐标。
+- 原生版保留地址 / GPS 和外部地图入口，Leaflet 拖动选点目前限 Web。
+
+地图来源与使用约束：[Leaflet](https://leafletjs.com/reference.html)、[OSM tiles](https://operations.osmfoundation.org/policies/tiles/)、[Nominatim](https://operations.osmfoundation.org/policies/nominatim/)。地名搜索仅在用户提交时请求，带缓存并限制每秒一次，不做自动补全或拖动时连续反查。正式多用户上线需配置自有/商业服务端地理编码代理进行全局限流；默认公共服务仅适合本地低流量体验。可通过 `.env.example` 中的地图与地理编码 URL 切换服务。

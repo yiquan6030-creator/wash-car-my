@@ -1,0 +1,25 @@
+const ts = require('typescript');
+const fs = require('fs');
+const vm = require('vm');
+const assert = require('node:assert/strict');
+let calls = [];
+const place = { place_id: 10, lat: '3.15', lon: '101.71', display_name: 'Test Mall, Kuala Lumpur', address: { road: 'Jalan Test', city: 'Kuala Lumpur', postcode: '50000', state: 'Kuala Lumpur' } };
+const compiled = ts.transpileModule(fs.readFileSync('src/services/geocoding.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText;
+const sandbox = {exports:{},process:{env:{}},setTimeout,clearTimeout,AbortController,fetch:async(url)=>{calls.push(url);return {ok:true,json:async()=>url.includes('/search?')?[place]:place};}};
+vm.runInNewContext(compiled,sandbox);
+(async()=>{
+ const api=sandbox.exports;
+ assert.equal(api.validPoint({latitude:0,longitude:0}),true);
+ assert.equal(api.validPoint({latitude:NaN,longitude:101}),false);
+ assert.equal(api.validPoint({latitude:3,longitude:181}),false);
+ const mapped=api.placeToAddress(place);
+ assert.equal(mapped.city,'Kuala Lumpur');assert.equal(mapped.postcode,'50000');assert.equal(mapped.latitude,3.15);
+ await assert.rejects(()=>api.searchAddresses('a'));
+ const results=await api.searchAddresses('KLCC');assert.equal(results.length,1);
+ await api.searchAddresses('KLCC');assert.equal(calls.length,1,'repeat search uses cache');
+ assert.ok(calls[0].includes('countrycodes=my'));
+ const exact={latitude:3.151234,longitude:101.712345};
+ const reverse=await api.reverseAddress(exact);
+ assert.equal(reverse.latitude,exact.latitude);assert.equal(reverse.longitude,exact.longitude,'retain parking pin, not geocoder centroid');
+ console.log('Map tests passed: coordinates, address mapping, search validation/cache and exact pin preservation.');
+})().catch(error=>{console.error(error);process.exitCode=1;});

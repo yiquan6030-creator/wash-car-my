@@ -7,7 +7,7 @@ http.createServer((req,res)=>{
   let file=path.resolve(root,'.'+pathname);
   if(!file.startsWith(root+path.sep)&&file!==root){res.writeHead(403);res.end();return;}
   if(!fs.existsSync(file)||fs.statSync(file).isDirectory())file=path.join(root,'index.html');
-  const mime={'.html':'text/html; charset=utf-8','.js':'application/javascript','.png':'image/png','.json':'application/json'};
+  const mime={'.html':'text/html; charset=utf-8','.js':'application/javascript','.css':'text/css','.svg':'image/svg+xml','.png':'image/png','.json':'application/json'};
   res.setHeader('Content-Type',mime[path.extname(file)]||'application/octet-stream');
   fs.createReadStream(file).pipe(res);
 }).listen(4173,'127.0.0.1',()=>console.log('WashCar preview: http://127.0.0.1:4173'));
