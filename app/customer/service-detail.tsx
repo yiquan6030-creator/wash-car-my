@@ -14,14 +14,7 @@ export default function ServiceDetailScreen() {
   const isDesktop = width >= 1024;
   const service = SERVICE_CATEGORIES.find(s => s.id === id) || SERVICE_CATEGORIES[1];
 
-  const includesList = [
-    'Exterior eco hand wash & foam spray',
-    'Rim decontamination & brake dust cleaning',
-    'Full interior cabin vacuuming & trunk vacuum',
-    'Dashboard, console & steering wheel wipe',
-    'Interior surface & door panel cleaning',
-    'Windscreen & glass clarity wipe-down',
-  ];
+  const includesList = service.features;
 
   const handleBookService = () => {
     setDraftService(service);
@@ -75,7 +68,7 @@ export default function ServiceDetailScreen() {
             <View style={{ flex: 1 }}>
               <Text style={styles.noticeTitle}>Vehicle Size Pricing Note</Text>
               <Text style={styles.noticeText}>
-                Base price starts at RM{service.startingPriceMYR} for Hatchbacks & Sedans. Larger vehicles (SUV, MPV, Pickup) may incur a small tier adjustment at checkout.
+                Base price starts at RM{service.startingPriceMYR} for Hatchbacks. Larger vehicles (SUV, MPV, Pickup) may incur a small tier adjustment at checkout.
               </Text>
             </View>
           </View>
@@ -91,7 +84,7 @@ export default function ServiceDetailScreen() {
             <Text style={styles.summaryPrice}>RM {service.startingPriceMYR}.00</Text>
           </View>
 
-          <TouchableOpacity style={styles.bookBtn} onPress={handleBookService} activeOpacity={0.9}>
+          <TouchableOpacity accessibilityRole="button" style={styles.bookBtn} onPress={handleBookService} activeOpacity={0.9}>
             <Text style={styles.bookBtnText}>Select & Book This Package →</Text>
           </TouchableOpacity>
         </View>

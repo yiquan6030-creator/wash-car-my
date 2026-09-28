@@ -120,15 +120,26 @@ ALTER TABLE public.washer_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.promotions ENABLE ROW LEVEL SECURITY;
 
 -- Allow public read access to service categories, addons, washer profiles & promotions
+DROP POLICY IF EXISTS "Allow public read service_categories" ON public.service_categories;
 CREATE POLICY "Allow public read service_categories" ON public.service_categories FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Allow public read service_addons" ON public.service_addons;
 CREATE POLICY "Allow public read service_addons" ON public.service_addons FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Allow public read washer_profiles" ON public.washer_profiles;
 CREATE POLICY "Allow public read washer_profiles" ON public.washer_profiles FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Allow public read promotions" ON public.promotions;
 CREATE POLICY "Allow public read promotions" ON public.promotions FOR SELECT USING (true);
 
--- Allow public select/insert on bookings for demo testing
-CREATE POLICY "Allow all bookings access" ON public.bookings FOR ALL USING (true);
-CREATE POLICY "Allow all vehicles access" ON public.vehicles FOR ALL USING (true);
-CREATE POLICY "Allow all locations access" ON public.locations FOR ALL USING (true);
+-- Remove unsafe demo policies. Prices, assignment and status updates must be
+-- performed by a trusted server; this local app does not use these tables yet.
+DROP POLICY IF EXISTS "Allow all bookings access" ON public.bookings;
+DROP POLICY IF EXISTS "Allow all vehicles access" ON public.vehicles;
+DROP POLICY IF EXISTS "Allow all locations access" ON public.locations;
+DROP POLICY IF EXISTS "Customers read own bookings" ON public.bookings;
+CREATE POLICY "Customers read own bookings" ON public.bookings FOR SELECT TO authenticated USING (customer_id = auth.uid());
+DROP POLICY IF EXISTS "Owners manage vehicles" ON public.vehicles;
+CREATE POLICY "Owners manage vehicles" ON public.vehicles FOR ALL TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+DROP POLICY IF EXISTS "Owners manage locations" ON public.locations;
+CREATE POLICY "Owners manage locations" ON public.locations FOR ALL TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 
 -- ========================================================
 -- INITIAL MALAYSIAN SEED DATA

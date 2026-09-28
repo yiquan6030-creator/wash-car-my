@@ -3,19 +3,20 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, useWin
 import { useRouter } from 'expo-router';
 import { useBooking } from '../../src/context/BookingContext';
 import { colors, spacing, borderRadius, shadows } from '../../src/theme';
-import { 
-  SERVICE_CATEGORIES, 
-  SAVED_VEHICLES, 
-  SAVED_LOCATIONS, 
-  SERVICE_ADDONS 
+import {
+  SERVICE_CATEGORIES,
+  SAVED_VEHICLES,
+  SAVED_LOCATIONS,
+  SERVICE_ADDONS
 } from '../../src/services/mockData';
 import { Vehicle, LocationAddress, PaymentMethodType, VehicleTier } from '../../src/types';
+import { servicePrice } from '../../src/services/bookingRules';
 import GoogleMapContainer from '../../src/components/GoogleMapContainer';
 
 export default function MultiStepBookingScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const { 
+  const {
     draftService, setDraftService,
     savedVehicles, draftVehicle, setDraftVehicle,
     draftLocation, setDraftLocation,
@@ -24,41 +25,47 @@ export default function MultiStepBookingScreen() {
     scheduledTime, setScheduledTime,
     selectedAddons, toggleAddon,
     discountMYR, applyPromoCode,
-    confirmBooking,
+    confirmBooking, addVehicle, savedLocations,
     t
   } = useBooking();
 
   const isDesktop = width >= 1024;
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [promoInput, setPromoInput] = useState<string>('');
-  const [selectedPayment, setSelectedPayment] = useState<PaymentMethodType>('fpx');
-  const [washerNotes, setWasherNotes] = useState<string>('Basement B2, Bay #45. Please call when you arrive.');
+  const [selectedPayment, setSelectedPayment] = useState<PaymentMethodType>('cash');
+  const [washerNotes, setWasherNotes] = useState<string>(draftLocation.notesForWasher || '');
   const [selectedPropType, setSelectedPropType] = useState<'landed' | 'condo' | 'office'>('condo');
   const [selectedKeyOption, setSelectedKeyOption] = useState<'in_person' | 'unlocked' | 'guardhouse'>('in_person');
-  
+
   // Custom Vehicle Modal
   const [showAddVehicleModal, setShowAddVehicleModal] = useState<boolean>(false);
   const [newPlate, setNewPlate] = useState<string>('');
   const [newMakeModel, setNewMakeModel] = useState<string>('');
   const [selectedVehicleType, setSelectedVehicleType] = useState<VehicleTier>('sedan');
 
+  const [error, setError] = useState('');
+  const submitting = React.useRef(false);
   const addonsTotal = selectedAddons.reduce((sum, a) => sum + a.priceMYR, 0);
-  const subtotal = draftService.startingPriceMYR + addonsTotal;
+  const subtotal = servicePrice(draftService, draftVehicle.tier) + addonsTotal;
   const serviceFee = 2;
   const grandTotal = Math.max(0, subtotal + serviceFee - discountMYR);
 
   const handleApplyPromo = () => {
     const success = applyPromoCode(promoInput);
     if (success) {
-      alert('Promo code applied! RM5 discount added.');
+      setError('优惠码已应用：RM5');
     } else {
-      alert('Enter valid code (e.g. FIRSTWASH5) for RM5 discount!');
+      setError('优惠码无效或不符合首单条件；首单码 FIRSTWASH5');
     }
   };
 
   const handleConfirmOrder = () => {
-    confirmBooking(selectedPayment);
-    router.replace('/customer/searching');
+    if (submitting.current) return;
+    submitting.current = true;
+    try {
+      confirmBooking(selectedPayment, { ...draftLocation, notesForWasher: washerNotes, propertyType: selectedPropType, keyHandoverOption: selectedKeyOption });
+      router.replace('/customer/tracking');
+    } catch (e) { setError((e as Error).message); submitting.current = false; }
   };
 
   const handleAddCustomVehicle = () => {
@@ -74,7 +81,7 @@ export default function MultiStepBookingScreen() {
       color: 'Custom Color',
       tier: selectedVehicleType,
     };
-    setDraftVehicle(created);
+    try { addVehicle(created); } catch (e) { setError((e as Error).message); return; }
     setShowAddVehicleModal(false);
     alert(`Added ${created.plateNumber} to garage!`);
   };
@@ -92,9 +99,11 @@ export default function MultiStepBookingScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
       <View style={[styles.mainWrapper, isDesktop && styles.mainWrapperDesktop]}>
 
+        {!!error && <Text accessibilityRole="alert" style={{ color: "#a33421", padding: 16 }}>{error}</Text>}
+        <Text style={{ padding: 12, color: "#17506c" }}>本地体验 · 服务后付款，暂未接入线上支付。价格按车辆类型调整。</Text>
         {/* STEPPER HEADER BAR */}
         <View style={styles.stepperBar}>
-          <TouchableOpacity 
+          <TouchableOpacity accessibilityRole="button"
             onPress={() => currentStep > 1 ? setCurrentStep(currentStep - 1) : router.back()}
             style={styles.backBtn}
           >
@@ -103,7 +112,7 @@ export default function MultiStepBookingScreen() {
 
           <View style={styles.stepsPillContainer}>
             {stepsList.map((st) => (
-              <TouchableOpacity 
+              <TouchableOpacity accessibilityRole="button"
                 key={st.num}
                 style={[styles.stepPillItem, currentStep === st.num && styles.stepPillActive, currentStep > st.num && styles.stepPillDone]}
                 onPress={() => setCurrentStep(st.num)}
@@ -135,7 +144,7 @@ export default function MultiStepBookingScreen() {
                   {SERVICE_CATEGORIES.map((cat) => {
                     const isSelected = draftService.id === cat.id;
                     return (
-                      <TouchableOpacity
+                      <TouchableOpacity accessibilityRole="button"
                         key={cat.id}
                         style={[styles.cardSelect, isSelected && styles.cardSelected]}
                         onPress={() => setDraftService(cat)}
@@ -163,7 +172,7 @@ export default function MultiStepBookingScreen() {
                   })}
                 </View>
 
-                <TouchableOpacity style={styles.nextBtn} onPress={() => setCurrentStep(2)}>
+                <TouchableOpacity accessibilityRole="button" style={styles.nextBtn} onPress={() => setCurrentStep(2)}>
                   <Text style={styles.nextBtnText}>Continue to Choose Vehicle →</Text>
                 </TouchableOpacity>
               </View>
@@ -177,7 +186,7 @@ export default function MultiStepBookingScreen() {
 
                 <View style={styles.sectionTitleRow}>
                   <Text style={styles.subHeader}>Saved Vehicles</Text>
-                  <TouchableOpacity onPress={() => setShowAddVehicleModal(!showAddVehicleModal)}>
+                  <TouchableOpacity accessibilityRole="button" onPress={() => setShowAddVehicleModal(!showAddVehicleModal)}>
                     <Text style={styles.addVehicleLink}>+ Add New Car</Text>
                   </TouchableOpacity>
                 </View>
@@ -185,26 +194,26 @@ export default function MultiStepBookingScreen() {
                 {showAddVehicleModal && (
                   <View style={styles.addVehicleBox}>
                     <Text style={styles.inputLabel}>Plate Number (e.g. VWB 8819):</Text>
-                    <TextInput 
-                      style={styles.input} 
-                      placeholder="VWB 8819" 
-                      value={newPlate} 
-                      onChangeText={setNewPlate} 
-                      autoCapitalize="characters" 
+                    <TextInput
+                      style={styles.input}
+                      placeholder="VWB 8819"
+                      value={newPlate}
+                      onChangeText={setNewPlate}
+                      autoCapitalize="characters"
                     />
 
                     <Text style={styles.inputLabel}>Make & Model (e.g. Perodua Myvi):</Text>
-                    <TextInput 
-                      style={styles.input} 
-                      placeholder="Perodua Myvi" 
-                      value={newMakeModel} 
-                      onChangeText={setNewMakeModel} 
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Perodua Myvi"
+                      value={newMakeModel}
+                      onChangeText={setNewMakeModel}
                     />
 
                     <Text style={styles.inputLabel}>Vehicle Type Tier:</Text>
                     <View style={styles.tierGrid}>
                       {(['hatchback', 'sedan', 'suv', 'mpv', 'pickup'] as VehicleTier[]).map((t) => (
-                        <TouchableOpacity
+                        <TouchableOpacity accessibilityRole="button"
                           key={t}
                           style={[styles.tierBtn, selectedVehicleType === t && styles.tierBtnSelected]}
                           onPress={() => setSelectedVehicleType(t)}
@@ -216,7 +225,7 @@ export default function MultiStepBookingScreen() {
                       ))}
                     </View>
 
-                    <TouchableOpacity style={styles.saveVehicleBtn} onPress={handleAddCustomVehicle}>
+                    <TouchableOpacity accessibilityRole="button" style={styles.saveVehicleBtn} onPress={handleAddCustomVehicle}>
                       <Text style={styles.saveVehicleText}>Save Vehicle & Continue</Text>
                     </TouchableOpacity>
                   </View>
@@ -226,7 +235,7 @@ export default function MultiStepBookingScreen() {
                   {SAVED_VEHICLES.map((v) => {
                     const isSelected = draftVehicle.id === v.id;
                     return (
-                      <TouchableOpacity
+                      <TouchableOpacity accessibilityRole="button"
                         key={v.id}
                         style={[styles.cardSelect, isSelected && styles.cardSelected]}
                         onPress={() => setDraftVehicle(v)}
@@ -246,7 +255,7 @@ export default function MultiStepBookingScreen() {
                   })}
                 </View>
 
-                <TouchableOpacity style={styles.nextBtn} onPress={() => setCurrentStep(3)}>
+                <TouchableOpacity accessibilityRole="button" style={styles.nextBtn} onPress={() => setCurrentStep(3)}>
                   <Text style={styles.nextBtnText}>Continue to Location →</Text>
                 </TouchableOpacity>
               </View>
@@ -261,8 +270,8 @@ export default function MultiStepBookingScreen() {
                 {/* Google Map Preview Container */}
                 <View style={{ borderRadius: 12, overflow: 'hidden', marginBottom: 16, borderWidth: 1, borderColor: colors.borderLight }}>
                   <GoogleMapContainer
-                    latitude={draftLocation?.latitude || 3.1293}
-                    longitude={draftLocation?.longitude || 101.6784}
+                    latitude={draftLocation.latitude}
+                    longitude={draftLocation.longitude}
                     locationName={draftLocation?.label || 'Selected Location'}
                     address={draftLocation?.addressLine1 || 'Jalan Telawi 3, Bangsar'}
                     condoBuildingName={draftLocation?.condoBuildingName}
@@ -273,15 +282,15 @@ export default function MultiStepBookingScreen() {
                 </View>
 
                 {/* Saved Locations Pickers */}
-                <Text style={styles.subHeader}>Saved Wash Locations</Text>
+                <TouchableOpacity accessibilityRole="button" onPress={() => router.push("/customer/profile")}><Text style={styles.addVehicleLink}>+ 管理 / 添加上门地址</Text></TouchableOpacity><Text style={styles.subHeader}>Saved Wash Locations</Text>
                 <View style={styles.cardsList}>
-                  {SAVED_LOCATIONS.map((loc) => {
+                  {savedLocations.map((loc) => {
                     const isSelected = draftLocation.id === loc.id;
                     return (
-                      <TouchableOpacity
+                      <TouchableOpacity accessibilityRole="button"
                         key={loc.id}
                         style={[styles.cardSelect, isSelected && styles.cardSelected]}
-                        onPress={() => setDraftLocation(loc)}
+                        onPress={() => { setDraftLocation(loc); setWasherNotes(loc.notesForWasher || ""); }}
                       >
                         <Text style={styles.cardTitle}>📍 {loc.label}</Text>
                         <Text style={styles.cardSub}>{loc.addressLine1}, {loc.city}, {loc.postcode}</Text>
@@ -296,21 +305,21 @@ export default function MultiStepBookingScreen() {
                 {/* Property Type Selection */}
                 <Text style={styles.subHeader}>Property Type</Text>
                 <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
                     style={[styles.tierBtn, selectedPropType === 'condo' && styles.tierBtnSelected, { flex: 1, paddingVertical: 10, alignItems: 'center' }]}
                     onPress={() => setSelectedPropType('condo')}
                   >
                     <Text style={[styles.tierBtnText, selectedPropType === 'condo' && styles.tierBtnTextSelected]}>🏢 Condo / Apartment</Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
                     style={[styles.tierBtn, selectedPropType === 'landed' && styles.tierBtnSelected, { flex: 1, paddingVertical: 10, alignItems: 'center' }]}
                     onPress={() => setSelectedPropType('landed')}
                   >
                     <Text style={[styles.tierBtnText, selectedPropType === 'landed' && styles.tierBtnTextSelected]}>🏡 Landed House</Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
                     style={[styles.tierBtn, selectedPropType === 'office' && styles.tierBtnSelected, { flex: 1, paddingVertical: 10, alignItems: 'center' }]}
                     onPress={() => setSelectedPropType('office')}
                   >
@@ -321,21 +330,21 @@ export default function MultiStepBookingScreen() {
                 {/* Key Collection / Handover Option */}
                 <Text style={styles.subHeader}>Key Collection / Handover Option</Text>
                 <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
                     style={[styles.tierBtn, selectedKeyOption === 'in_person' && styles.tierBtnSelected, { flex: 1, paddingVertical: 10, alignItems: 'center' }]}
                     onPress={() => setSelectedKeyOption('in_person')}
                   >
                     <Text style={[styles.tierBtnText, selectedKeyOption === 'in_person' && styles.tierBtnTextSelected]}>👤 Key In Person</Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
                     style={[styles.tierBtn, selectedKeyOption === 'unlocked' && styles.tierBtnSelected, { flex: 1, paddingVertical: 10, alignItems: 'center' }]}
                     onPress={() => setSelectedKeyOption('unlocked')}
                   >
                     <Text style={[styles.tierBtnText, selectedKeyOption === 'unlocked' && styles.tierBtnTextSelected]}>🔓 Car Left Unlocked</Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
                     style={[styles.tierBtn, selectedKeyOption === 'guardhouse' && styles.tierBtnSelected, { flex: 1, paddingVertical: 10, alignItems: 'center' }]}
                     onPress={() => setSelectedKeyOption('guardhouse')}
                   >
@@ -354,7 +363,7 @@ export default function MultiStepBookingScreen() {
                   numberOfLines={3}
                 />
 
-                <TouchableOpacity style={styles.nextBtn} onPress={() => setCurrentStep(4)}>
+                <TouchableOpacity accessibilityRole="button" style={styles.nextBtn} onPress={() => setCurrentStep(4)}>
                   <Text style={styles.nextBtnText}>Continue to Timing →</Text>
                 </TouchableOpacity>
               </View>
@@ -364,17 +373,17 @@ export default function MultiStepBookingScreen() {
             {currentStep === 4 && (
               <View style={styles.stepBox}>
                 <Text style={styles.stepTitle}>STEP 4: Wash Now or Reserve Slot</Text>
-                <Text style={styles.stepSubtitle}>Immediate express wash dispatch or schedule a future slot.</Text>
+                <Text style={styles.stepSubtitle}>选择尽快上门或预约未来 30 天内的时间。</Text>
 
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   style={[styles.cardSelect, draftBookingType === 'now' && styles.cardSelected]}
                   onPress={() => setDraftBookingType('now')}
                 >
                   <Text style={styles.cardTitle}>⚡ Express Wash Now (ASAP)</Text>
-                  <Text style={styles.cardSub}>Find available nearby detailer. Arrives in ~30 minutes.</Text>
+                  <Text style={styles.cardSub}>上门时间需由接单师傅确认。</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   style={[styles.cardSelect, draftBookingType === 'scheduled' && styles.cardSelected]}
                   onPress={() => setDraftBookingType('scheduled')}
                 >
@@ -384,14 +393,14 @@ export default function MultiStepBookingScreen() {
 
                 {draftBookingType === 'scheduled' && (
                   <View style={styles.scheduleBox}>
-                    <Text style={styles.inputLabel}>Select Preferred Date:</Text>
+                    <Text style={styles.inputLabel}>日期 YYYY-MM-DD（至少提前 1 小时）</Text>
                     <TextInput style={styles.input} value={scheduledDate} onChangeText={setScheduledDate} />
-                    <Text style={styles.inputLabel}>Select Preferred Time Slot:</Text>
+                    <Text style={styles.inputLabel}>马来西亚时间 HH:mm（08:00–18:00）</Text>
                     <TextInput style={styles.input} value={scheduledTime} onChangeText={setScheduledTime} />
                   </View>
                 )}
 
-                <TouchableOpacity style={styles.nextBtn} onPress={() => setCurrentStep(5)}>
+                <TouchableOpacity accessibilityRole="button" style={styles.nextBtn} onPress={() => setCurrentStep(5)}>
                   <Text style={styles.nextBtnText}>Continue to Add-ons →</Text>
                 </TouchableOpacity>
               </View>
@@ -407,7 +416,7 @@ export default function MultiStepBookingScreen() {
                   {SERVICE_ADDONS.map((addon) => {
                     const isChecked = selectedAddons.some(a => a.id === addon.id);
                     return (
-                      <TouchableOpacity
+                      <TouchableOpacity accessibilityRole="button"
                         key={addon.id}
                         style={[styles.cardSelect, isChecked && styles.cardSelected]}
                         onPress={() => toggleAddon(addon)}
@@ -425,7 +434,7 @@ export default function MultiStepBookingScreen() {
                   })}
                 </View>
 
-                <TouchableOpacity style={styles.nextBtn} onPress={() => setCurrentStep(6)}>
+                <TouchableOpacity accessibilityRole="button" style={styles.nextBtn} onPress={() => setCurrentStep(6)}>
                   <Text style={styles.nextBtnText}>Review & Proceed to Payment →</Text>
                 </TouchableOpacity>
               </View>
@@ -446,45 +455,15 @@ export default function MultiStepBookingScreen() {
                     onChangeText={setPromoInput}
                     autoCapitalize="characters"
                   />
-                  <TouchableOpacity style={styles.applyBtn} onPress={handleApplyPromo}>
+                  <TouchableOpacity accessibilityRole="button" style={styles.applyBtn} onPress={handleApplyPromo}>
                     <Text style={styles.applyBtnText}>Apply Promo</Text>
                   </TouchableOpacity>
                 </View>
 
-                {/* Payment Gateway Options */}
-                <Text style={styles.subHeader}>Select Payment Method (Malaysia)</Text>
-                <View style={styles.paymentGrid}>
-                  <TouchableOpacity 
-                    style={[styles.payBtn, selectedPayment === 'fpx' && styles.payBtnSelected]} 
-                    onPress={() => setSelectedPayment('fpx')}
-                  >
-                    <Text style={styles.payText}>🏦 FPX Online Banking</Text>
-                  </TouchableOpacity>
+                <Text style={styles.subHeader}>付款方式</Text><Text style={styles.cardSub}>服务后付款 · 尚未收款</Text><Text style={styles.cardSub}>FPX、DuitNow、TNG 及银行卡需接入支付服务后开放。</Text>
 
-                  <TouchableOpacity 
-                    style={[styles.payBtn, selectedPayment === 'duitnow' && styles.payBtnSelected]} 
-                    onPress={() => setSelectedPayment('duitnow')}
-                  >
-                    <Text style={styles.payText}>📲 DuitNow QR</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity 
-                    style={[styles.payBtn, selectedPayment === 'tng_ewallet' && styles.payBtnSelected]} 
-                    onPress={() => setSelectedPayment('tng_ewallet')}
-                  >
-                    <Text style={styles.payText}>🟦 Touch 'n Go eWallet</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity 
-                    style={[styles.payBtn, selectedPayment === 'card' && styles.payBtnSelected]} 
-                    onPress={() => setSelectedPayment('card')}
-                  >
-                    <Text style={styles.payText}>💳 Credit / Debit Card</Text>
-                  </TouchableOpacity>
-                </View>
-
-                <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirmOrder} activeOpacity={0.9}>
-                  <Text style={styles.confirmBtnText}>Confirm Order & Pay (RM {grandTotal}) →</Text>
+                <TouchableOpacity accessibilityRole="button" style={styles.confirmBtn} onPress={handleConfirmOrder} activeOpacity={0.9}>
+                  <Text style={styles.confirmBtnText}>确认预约 · 服务后付款 RM {grandTotal.toFixed(2)} →</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -514,7 +493,7 @@ export default function MultiStepBookingScreen() {
               <View style={styles.summaryItemRow}>
                 <Text style={styles.sumLabel}>Timing:</Text>
                 <Text style={styles.sumVal}>
-                  {draftBookingType === 'now' ? 'Wash Now (Express ~30m)' : `${scheduledDate} @ ${scheduledTime}`}
+                  {draftBookingType === 'now' ? '尽快上门 · 以师傅确认为准' : `${scheduledDate} @ ${scheduledTime}`}
                 </Text>
               </View>
 
@@ -529,7 +508,7 @@ export default function MultiStepBookingScreen() {
 
               <View style={styles.summaryItemRow}>
                 <Text style={styles.sumLabel}>Package Price:</Text>
-                <Text style={styles.sumVal}>RM {draftService.startingPriceMYR}.00</Text>
+                <Text style={styles.sumVal}>RM {servicePrice(draftService, draftVehicle.tier).toFixed(2)}</Text>
               </View>
 
               {addonsTotal > 0 && (

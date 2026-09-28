@@ -17,8 +17,8 @@ interface GoogleMapContainerProps {
 }
 
 export default function GoogleMapContainer({
-  latitude = 3.1390,
-  longitude = 101.6869,
+  latitude,
+  longitude,
   locationName,
   address,
   condoBuildingName,
@@ -30,19 +30,21 @@ export default function GoogleMapContainer({
   showOpenInAppBtn = true,
 }: GoogleMapContainerProps) {
 
+  const hasCoordinates = Number.isFinite(latitude) && Number.isFinite(longitude);
+  const query = hasCoordinates ? `${latitude},${longitude}` : address;
   const handleOpenGoogleMaps = () => {
-    let url = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
-    if (washerLatitude && washerLongitude) {
+    let url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+    if (hasCoordinates && washerLatitude && washerLongitude) {
       url = `https://www.google.com/maps/dir/?api=1&origin=${washerLatitude},${washerLongitude}&destination=${latitude},${longitude}`;
     }
     Linking.openURL(url).catch((err) => {
       console.error('Could not open Google Maps link:', err);
-      alert('Opening Google Maps...');
+      // Keep the address visible if the external maps application cannot open.
     });
   };
 
   // Google Maps embed URL for web
-  const embedUrl = `https://maps.google.com/maps?q=${latitude},${longitude}&z=15&output=embed`;
+  const embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(query)}&z=15&output=embed`;
 
   return (
     <View style={[styles.container, shadows.medium]}>
@@ -89,7 +91,7 @@ export default function GoogleMapContainer({
         <View style={styles.gpsBadgeOverlay}>
           <Text style={styles.gpsDot}>🟢</Text>
           <Text style={styles.gpsBadgeText}>
-            GPS: {latitude.toFixed(4)}, {longitude.toFixed(4)}
+            {hasCoordinates ? `位置：${latitude!.toFixed(4)}, ${longitude!.toFixed(4)}` : "按地址搜索 · 请核对地图位置"}
           </Text>
         </View>
       </View>

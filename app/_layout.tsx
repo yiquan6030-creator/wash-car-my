@@ -5,6 +5,7 @@ import { View } from 'react-native';
 import { BookingProvider } from '../src/context/BookingContext';
 import AppHeader from '../src/components/AppHeader';
 import DevModeSwitcher from '../src/components/DevModeSwitcher';
+import SessionGuard from '../src/components/SessionGuard';
 import BottomTabBar from '../src/components/BottomTabBar';
 
 export default function RootLayout() {
@@ -36,6 +37,7 @@ export default function RootLayout() {
           <Stack.Screen name="washer/messages" />
           <Stack.Screen name="washer/profile" />
         </Stack>
+        <SessionGuard />
         <BottomTabBar />
         <DevModeSwitcher />
       </View>

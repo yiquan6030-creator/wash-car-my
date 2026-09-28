@@ -32,7 +32,7 @@ export default function BottomTabBar() {
         {tabs.map((tab) => {
           const isActive = pathname === tab.path || (tab.id === 'home' && (pathname === '/washer' || pathname === '/washer/'));
           return (
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               key={tab.id}
               style={styles.tabItem}
               onPress={() => router.push(tab.path as any)}
@@ -63,7 +63,7 @@ export default function BottomTabBar() {
       {customerTabs.map((tab) => {
         const isActive = pathname === tab.path || (tab.id === 'home' && (pathname === '/' || pathname === '/customer' || pathname === '/customer/'));
         return (
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             key={tab.id}
             style={styles.tabItem}
             onPress={() => router.push(tab.path as any)}

@@ -65,7 +65,8 @@ export type BookingStatus =
   | 'on_the_way'
   | 'arrived'
   | 'washing'
-  | 'completed';
+  | 'completed'
+  | 'cancelled';
 
 export interface WasherProfile {
   id: string;
@@ -120,4 +121,10 @@ export interface CustomerBooking {
   afterPhotoUrl?: string;
   userRating?: number;
   driverTipMYR?: number;
+  completedAt?: string;
+  cancelledReason?: string;
+  review?: string;
+  inspectionNotes?: string;
+  checklist?: string[];
+  statusHistory?: { status: BookingStatus; at: string }[];
 }
