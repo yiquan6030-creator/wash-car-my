@@ -24,7 +24,34 @@ export default function Home() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
   const [editor, setEditor] = useState<LocationAddress>(c.draftLocation);
+  const [showAddVehicle, setShowAddVehicle] = useState(false);
+  const [newPlate, setNewPlate] = useState('');
+  const [newMake, setNewMake] = useState('');
+  const [newModel, setNewModel] = useState('');
+  const [newColor, setNewColor] = useState('⚪ 珍珠白');
+  const [newTier, setNewTier] = useState<import('../../src/types').VehicleTier>('sedan');
   const requestId = useRef(0);
+
+  const handleCreateVehicle = () => {
+    try {
+      const added = c.addVehicle({
+        plateNumber: newPlate,
+        make: newMake || 'Perodua',
+        model: newModel || 'Myvi',
+        color: newColor || '珍珠白',
+        tier: newTier,
+      });
+      c.setDraftVehicle(added);
+      setShowAddVehicle(false);
+      setNewPlate('');
+      setNewMake('');
+      setNewModel('');
+      setSheet(null);
+      setNotice('');
+    } catch(e) {
+      setNotice((e as Error).message);
+    }
+  };
   const current = c.orders.find(isOpen);
   const basePrice = servicePrice(c.draftService, c.draftVehicle.tier);
   const recenter = (point: MapPoint) => { setPin(point); setTarget(p => ({ ...point, revision: p.revision + 1 })); };
@@ -101,7 +128,7 @@ export default function Home() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.services}>
           {SERVICE_CATEGORIES.map(service => { const selected=c.draftService.id===service.id;return <TouchableOpacity key={service.id} accessibilityRole="button" accessibilityLabel={`选择${serviceNames[service.id]}`} accessibilityState={{selected}} style={[s.service,selected&&s.serviceSelected]} onPress={() => c.setDraftService(service)}><Text style={s.serviceIcon}>{service.icon}</Text><Text style={[s.serviceName,selected&&{color:green}]}>{serviceNames[service.id]}</Text><Text style={s.servicePrice}>RM {servicePrice(service,c.draftVehicle.tier)}</Text>{selected&&<View style={s.serviceCheck}><Check size={10} color="#fff"/></View>}</TouchableOpacity>;})}
         </ScrollView>
-        {desktop && <View style={s.desktopInfo}><Text style={s.infoTitle}>到你的停车位，不用排队。</Text><Text style={s.infoText}>在地图上拖动或点击确定位置，补充停车位和门禁说明。师傅接单后可在订单中查看服务进度。</Text><Text style={s.infoText}>地图与地址来自 OpenStreetMap。附近师傅实时位置尚未接入。</Text></View>}
+        {desktop && <View style={s.desktopInfo}><Text style={s.infoTitle}>到你的停车位，不用排队。</Text><Text style={s.infoText}>在地图上拖动或点击确定位置，补充停车位和门禁说明。师傅接单后可在订单中查看服务进度。</Text><Text style={s.infoText}>实时地图与坐标定位服务由 Google Maps 提供。</Text></View>}
       </ScrollView>
       <View style={s.checkout}><View><Text style={s.total}>RM {(basePrice+2).toFixed(2)}<Text style={s.from}> 起</Text></Text><Text style={s.fee}>已含 RM2 服务费</Text></View><TouchableOpacity accessibilityRole="button" style={s.continue} onPress={() => pending?identifyPin():router.push({ pathname: '/customer/book', params: { step: '4' } })}><Text style={s.white}>{pending?'确认上门位置':'下一步 · 预约洗车'}</Text><ChevronRight size={19} color="#fff"/></TouchableOpacity></View>
     </View>
@@ -112,14 +139,66 @@ export default function Home() {
           {!!notice&&<Text accessibilityRole="alert" style={s.notice}>{notice}</Text>}
           {sheet==='search'&&<>
             <View style={s.queryRow}><TextInput accessibilityLabel="搜索马来西亚地址" placeholder="输入公寓、商场或街道" style={s.query} value={query} onChangeText={setQuery} onSubmitEditing={find} returnKeyType="search"/><TouchableOpacity disabled={busy} accessibilityRole="button" accessibilityLabel="搜索地址" onPress={find} style={s.searchSubmit}>{busy?<ActivityIndicator color="#fff"/>:<Search size={20} color="#fff"/>}</TouchableOpacity></View>
-            <Text style={s.locationSub}>点击搜索后由 OpenStreetMap 查询马来西亚地址。</Text>
+            <Text style={s.locationSub}>结合 Google Maps 坐标查询马来西亚地址。</Text>
             <TouchableOpacity accessibilityRole="button" style={s.result} onPress={locate}><LocateFixed size={19} color={green}/><Text style={s.locationTitle}>使用当前位置</Text></TouchableOpacity>
             {searched&&<Text style={s.groupTitle}>{results.length?'搜索结果':'没有找到地址，试试英文街道名或手动填写。'}</Text>}
             {results.map(location=><TouchableOpacity key={location.id} accessibilityRole="button" style={s.result} onPress={()=>{requestId.current++;setBusy(false);recenter(location as MapPoint);setPending(true);setEditor(location);setSheet('address');setNotice('');}}><MapPin size={18} color={green}/><View style={{flex:1}}><Text style={s.locationTitle}>{location.label}</Text><Text style={s.locationSub}>{location.addressLine1}, {location.city}</Text></View><ChevronRight size={16} color="#789085"/></TouchableOpacity>)}
             <Text style={s.groupTitle}>常用地址</Text>{c.savedLocations.map(location=><TouchableOpacity key={location.id} accessibilityRole="button" style={s.result} onPress={()=>chooseSaved(location)}><MapPin size={18} color={green}/><View style={{flex:1}}><Text style={s.locationTitle}>{location.label}</Text><Text style={s.locationSub}>{location.addressLine1}</Text></View></TouchableOpacity>)}
             <TouchableOpacity accessibilityRole="button" style={s.manual} onPress={()=>{requestId.current++;setBusy(false);setEditor(blankAt(pin));setSheet('address');setNotice('');}}><Text style={{color:green,fontWeight:'700'}}>+ 手动填写此地图位置的地址</Text></TouchableOpacity>
           </>}
-          {sheet==='vehicle'&&c.savedVehicles.map(vehicle=><TouchableOpacity key={vehicle.id} accessibilityRole="button" style={s.result} onPress={()=>{c.setDraftVehicle(vehicle);close();}}><Car size={22} color={green}/><View style={{flex:1}}><Text style={s.locationTitle}>{vehicle.plateNumber}</Text><Text style={s.locationSub}>{vehicle.make} {vehicle.model} · {vehicle.tier}</Text></View>{c.draftVehicle.id===vehicle.id&&<Check color={green} size={20}/>}</TouchableOpacity>)}
+          {sheet==='vehicle'&&<>
+            <Text style={s.groupTitle}>已保存的爱车</Text>
+            {c.savedVehicles.map(vehicle=><TouchableOpacity key={vehicle.id} accessibilityRole="button" style={s.result} onPress={()=>{c.setDraftVehicle(vehicle);close();}}><Car size={22} color={green}/><View style={{flex:1}}><Text style={s.locationTitle}>{vehicle.plateNumber}</Text><Text style={s.locationSub}>{vehicle.make} {vehicle.model} · {vehicle.color || '珍珠白'} · {vehicle.tier.toUpperCase()}</Text></View>{c.draftVehicle.id===vehicle.id&&<Check color={green} size={20}/>}</TouchableOpacity>)}
+
+            {!showAddVehicle ? (
+              <TouchableOpacity accessibilityRole="button" style={s.manual} onPress={()=>setShowAddVehicle(true)}>
+                <Text style={{color:green,fontWeight:'700',fontSize:14}}>+ 添加我的新爱车 (Register New Car)</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={{gap:10,backgroundColor:'#f5f8f5',padding:14,borderRadius:14,borderWidth:1,borderColor:'#d6e4d8',marginTop:10}}>
+                <Text style={{fontWeight:'700',fontSize:14,color:'#1c3e2e'}}>添加新爱车信息</Text>
+                <View style={{gap:4}}>
+                  <Text style={s.fieldLabel}>车牌号码 (Plate Number) *</Text>
+                  <TextInput style={s.field} placeholder="例如：VWB 8819" value={newPlate} onChangeText={setNewPlate} autoCapitalize="characters" />
+                </View>
+
+                <View style={{flexDirection:'row',gap:8}}>
+                  <View style={{flex:1,gap:4}}>
+                    <Text style={s.fieldLabel}>汽车品牌 (Make)</Text>
+                    <TextInput style={s.field} placeholder="例如：Perodua" value={newMake} onChangeText={setNewMake} />
+                  </View>
+                  <View style={{flex:1,gap:4}}>
+                    <Text style={s.fieldLabel}>具体车型 (Model)</Text>
+                    <TextInput style={s.field} placeholder="例如：Myvi" value={newModel} onChangeText={setNewModel} />
+                  </View>
+                </View>
+
+                <View style={{gap:4}}>
+                  <Text style={s.fieldLabel}>车身颜色 (Color)</Text>
+                  <TextInput style={s.field} placeholder="例如：珍珠白 / 曜石黑" value={newColor} onChangeText={setNewColor} />
+                </View>
+
+                <View style={{gap:4}}>
+                  <Text style={s.fieldLabel}>车型类别 (Vehicle Tier)</Text>
+                  <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
+                    {(['hatchback', 'sedan', 'suv', 'mpv', 'pickup'] as const).map(t => (
+                      <TouchableOpacity
+                        key={t}
+                        style={{paddingHorizontal:10,paddingVertical:6,borderRadius:8,backgroundColor:newTier===t?green:'#fff',borderWidth:1,borderColor:newTier===t?green:'#d6e4d8'}}
+                        onPress={()=>setNewTier(t)}
+                      >
+                        <Text style={{fontSize:11,fontWeight:'700',color:newTier===t?'#fff':'#355744'}}>{t.toUpperCase()}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
+                <TouchableOpacity accessibilityRole="button" style={s.save} onPress={handleCreateVehicle}>
+                  <Text style={s.white}>保存并选用此爱车 →</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </>}
           {sheet==='address'&&<>
             {busy?<View style={s.queryRow}><ActivityIndicator color={green}/><Text style={s.locationSub}>正在识别位置…</Text></View>:null}
             {validPoint(editor)&&<Text style={s.coordinate}>📍 {editor.latitude.toFixed(5)}, {editor.longitude.toFixed(5)} · 请核对门牌与停车位</Text>}
