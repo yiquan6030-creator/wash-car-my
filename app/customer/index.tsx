@@ -83,9 +83,10 @@ export default function CustomerHomeScreen() {
   
   // Interactive map picker & custom address search states
   const [customAddressInput, setCustomAddressInput] = React.useState<string>(
-    draftLocation?.addressLine1 || 'Mukim Tebrau, 地不佬, 81800, 新山, 柔佛, Malaysia'
+    draftLocation?.addressLine1 || 'Jalan Telawi 3, Bangsar, Kuala Lumpur'
   );
-  const [showGreenMapPicker, setShowGreenMapPicker] = React.useState<boolean>(true);
+  const [showGreenMapPicker, setShowGreenMapPicker] = React.useState<boolean>(false);
+  const [activeBottomTab, setActiveBottomTab] = React.useState<'packages' | 'promos' | 'addons'>('packages');
 
   React.useEffect(() => {
     if (draftLocation?.addressLine1) {
@@ -196,8 +197,8 @@ export default function CustomerHomeScreen() {
                 {showGreenMapPicker && (
                   <>
                     <GoogleMapContainer
-                      latitude={draftLocation?.latitude || 1.5450}
-                      longitude={draftLocation?.longitude || 103.8050}
+                      latitude={draftLocation?.latitude || 3.1293}
+                      longitude={draftLocation?.longitude || 101.6784}
                       locationName={draftLocation?.label || '自选洗车地点'}
                       address={draftLocation?.addressLine1 || customAddressInput}
                       condoBuildingName={draftLocation?.condoBuildingName}
@@ -243,22 +244,22 @@ export default function CustomerHomeScreen() {
                 )}
               </View>
 
-              {/* Saved Address Pickers List */}
-              <View style={styles.savedLocationPickerGrid}>
+              {/* Saved Address Pickers List (Horizontal Scroll Pill Row) */}
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.savedLocationPickerGrid}>
                 {SAVED_LOCATIONS.map((loc) => {
                   const isLocSelected = draftLocation?.id === loc.id;
                   return (
                     <TouchableOpacity
                       key={loc.id}
-                      style={[styles.locationPickItem, isLocSelected && styles.locationPickItemActive]}
+                      style={[styles.locationPickItemHorizontal, isLocSelected && styles.locationPickItemActive]}
                       onPress={() => {
                         setDraftLocation(loc);
                         setCustomAddressInput(loc.addressLine1);
                       }}
                       activeOpacity={0.85}
                     >
-                      <Text style={{ fontSize: 16 }}>{isLocSelected ? '🟢' : '📍'}</Text>
-                      <View style={{ flex: 1, marginLeft: 8 }}>
+                      <Text style={{ fontSize: 14 }}>{isLocSelected ? '🟢' : '📍'}</Text>
+                      <View style={{ marginLeft: 6 }}>
                         <Text style={[styles.locationPickTitle, isLocSelected && styles.locationPickTitleActive]} numberOfLines={1}>
                           {loc.label}
                         </Text>
@@ -269,7 +270,7 @@ export default function CustomerHomeScreen() {
                     </TouchableOpacity>
                   );
                 })}
-              </View>
+              </ScrollView>
 
               {/* 2. Vehicle Garage Quick Switcher with License Plate & Color Badge */}
               <View style={styles.garageSectionGreen}>
@@ -679,147 +680,154 @@ export default function CustomerHomeScreen() {
         </View>
 
         {/* ============================================================ */}
-        {/* 2. TRUST & VALUE PROPOSITION BANNER */}
+        {/* 2. TRUST & VALUE PROPOSITION BANNER (COMPACT 3-COL ROW) */}
         {/* ============================================================ */}
         <View style={styles.valuePropsContainer}>
-          <View style={[styles.valuePropCard, isTablet && styles.valuePropCardGrid]}>
-            <View style={styles.propIconBox}><Text style={{ fontSize: 22 }}>⚡</Text></View>
+          <View style={styles.valuePropCard}>
+            <View style={styles.propIconBox}><Text style={{ fontSize: 18 }}>⚡</Text></View>
             <View style={{ flex: 1 }}>
               <Text style={styles.propTitle}>30-Min Rapid Dispatch</Text>
-              <Text style={styles.propSub}>On-demand detailers stationed near major KL & PJ hubs.</Text>
+              <Text style={styles.propSub} numberOfLines={1}>On-demand detailers near KL & PJ hubs.</Text>
             </View>
           </View>
 
-          <View style={[styles.valuePropCard, isTablet && styles.valuePropCardGrid]}>
-            <View style={styles.propIconBox}><Text style={{ fontSize: 22 }}>💧</Text></View>
+          <View style={styles.valuePropCard}>
+            <View style={styles.propIconBox}><Text style={{ fontSize: 18 }}>💧</Text></View>
             <View style={{ flex: 1 }}>
               <Text style={styles.propTitle}>Low-Water Eco Wash</Text>
-              <Text style={styles.propSub}>Condo management approved. Zero mess or floor pooling.</Text>
+              <Text style={styles.propSub} numberOfLines={1}>Condo approved, zero floor mess.</Text>
             </View>
           </View>
 
-          <View style={[styles.valuePropCard, isTablet && styles.valuePropCardGrid]}>
-            <View style={styles.propIconBox}><Text style={{ fontSize: 22 }}>🛡️</Text></View>
+          <View style={styles.valuePropCard}>
+            <View style={styles.propIconBox}><Text style={{ fontSize: 18 }}>🛡️</Text></View>
             <View style={{ flex: 1 }}>
               <Text style={styles.propTitle}>RM100k Paint Guarantee</Text>
-              <Text style={styles.propSub}>Fully insured detailing with microfiber & scratch-free process.</Text>
+              <Text style={styles.propSub} numberOfLines={1}>Fully insured scratch-free process.</Text>
             </View>
           </View>
         </View>
 
         {/* ============================================================ */}
-        {/* 3. POPULAR SERVICE PACKAGES GRID */}
+        {/* 3. TABBED EXPLORER: PACKAGES, PROMOTIONS & ADD-ONS */}
         {/* ============================================================ */}
-        <View style={styles.sectionHeaderBox}>
-          <View>
-            <Text style={styles.sectionHeaderTitle}>Popular Detailing Packages</Text>
-            <Text style={styles.sectionHeaderSub}>Choose doorstep service tailored for your vehicle.</Text>
-          </View>
-          <TouchableOpacity onPress={() => router.push('/customer/book')}>
-            <Text style={styles.viewAllLink}>View All Services →</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={[styles.serviceCardsGrid, isTablet && styles.serviceCardsGrid2Col, isDesktop && styles.serviceCardsGrid4Col]}>
-          {SERVICE_CATEGORIES.map((cat) => (
+        <View style={styles.bottomTabContainer}>
+          <View style={styles.bottomTabHeaderRow}>
             <TouchableOpacity
-              key={cat.id}
-              style={styles.serviceDetailCard}
-              onPress={() => router.push({ pathname: '/customer/service-detail', params: { id: cat.id } })}
-              activeOpacity={0.88}
+              style={[styles.bottomTabBtn, activeBottomTab === 'packages' && styles.bottomTabBtnActive]}
+              onPress={() => setActiveBottomTab('packages')}
             >
-              {cat.badge && (
-                <View style={styles.catBadgeTag}>
-                  <Text style={styles.catBadgeText}>{cat.badge}</Text>
-                </View>
-              )}
-              <View style={styles.catHeaderRow}>
-                <View style={styles.catIconCircle}>
-                  <Text style={{ fontSize: 24 }}>{cat.icon}</Text>
-                </View>
-                <View>
-                  <Text style={styles.catPriceTag}>RM {cat.startingPriceMYR}</Text>
-                  <Text style={styles.catTimeSub}>{cat.durationRange}</Text>
-                </View>
-              </View>
+              <Text style={[styles.bottomTabText, activeBottomTab === 'packages' && styles.bottomTabTextActive]}>
+                ✨ 热门洗车套餐 (Packages)
+              </Text>
+            </TouchableOpacity>
 
-              <Text style={styles.catNameText}>{cat.name}</Text>
-              <Text style={styles.catTaglineText}>{cat.tagline}</Text>
+            <TouchableOpacity
+              style={[styles.bottomTabBtn, activeBottomTab === 'promos' && styles.bottomTabBtnActive]}
+              onPress={() => setActiveBottomTab('promos')}
+            >
+              <Text style={[styles.bottomTabText, activeBottomTab === 'promos' && styles.bottomTabTextActive]}>
+                🏷️ 优惠券折扣 (Promos)
+              </Text>
+            </TouchableOpacity>
 
-              <View style={styles.catFeaturesBox}>
-                {cat.features.slice(0, 3).map((feat, idx) => (
-                  <View key={idx} style={styles.featRow}>
-                    <Text style={styles.featCheck}>✓</Text>
-                    <Text style={styles.featText} numberOfLines={1}>{feat}</Text>
+            <TouchableOpacity
+              style={[styles.bottomTabBtn, activeBottomTab === 'addons' && styles.bottomTabBtnActive]}
+              onPress={() => setActiveBottomTab('addons')}
+            >
+              <Text style={[styles.bottomTabText, activeBottomTab === 'addons' && styles.bottomTabTextActive]}>
+                🛡️ 洗车加购项目 (Add-ons)
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {activeBottomTab === 'packages' && (
+            <View style={[styles.serviceCardsGrid, isTablet && styles.serviceCardsGrid2Col, isDesktop && styles.serviceCardsGrid4Col]}>
+              {SERVICE_CATEGORIES.map((cat) => (
+                <TouchableOpacity
+                  key={cat.id}
+                  style={styles.serviceDetailCard}
+                  onPress={() => router.push({ pathname: '/customer/service-detail', params: { id: cat.id } })}
+                  activeOpacity={0.88}
+                >
+                  {cat.badge && (
+                    <View style={styles.catBadgeTag}>
+                      <Text style={styles.catBadgeText}>{cat.badge}</Text>
+                    </View>
+                  )}
+                  <View style={styles.catHeaderRow}>
+                    <View style={styles.catIconCircle}>
+                      <Text style={{ fontSize: 24 }}>{cat.icon}</Text>
+                    </View>
+                    <View>
+                      <Text style={styles.catPriceTag}>RM {cat.startingPriceMYR}</Text>
+                      <Text style={styles.catTimeSub}>{cat.durationRange}</Text>
+                    </View>
                   </View>
-                ))}
-              </View>
 
-              <View style={styles.catCardFooter}>
-                <Text style={styles.selectServiceLink}>Select Package →</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
+                  <Text style={styles.catNameText}>{cat.name}</Text>
+                  <Text style={styles.catTaglineText}>{cat.tagline}</Text>
 
-        {/* ============================================================ */}
-        {/* 4. PROMOTIONS & SPECIAL OFFERS CAROUSEL */}
-        {/* ============================================================ */}
-        <View style={styles.sectionHeaderBox}>
-          <View>
-            <Text style={styles.sectionHeaderTitle}>Promotions & Voucher Discounts 🏷️</Text>
-            <Text style={styles.sectionHeaderSub}>Apply codes at checkout for instant MYR savings.</Text>
-          </View>
-        </View>
+                  <View style={styles.catFeaturesBox}>
+                    {cat.features.slice(0, 3).map((feat, idx) => (
+                      <View key={idx} style={styles.featRow}>
+                        <Text style={styles.featCheck}>✓</Text>
+                        <Text style={styles.featText} numberOfLines={1}>{feat}</Text>
+                      </View>
+                    ))}
+                  </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.promoScrollContainer}>
-          {PROMOTIONS.map((promo) => (
-            <View key={promo.id} style={[styles.promoBannerCard, { backgroundColor: promo.colorBg }]}>
-              <View style={styles.promoTopRow}>
-                <Text style={styles.promoDiscountText}>{promo.discountText}</Text>
-                <View style={styles.promoCodePill}>
-                  <Text style={styles.promoCodeText}>{promo.code}</Text>
-                </View>
-              </View>
-              <Text style={styles.promoTitleText}>{promo.title}</Text>
-              <Text style={styles.promoDescText}>{promo.description}</Text>
-              <TouchableOpacity
-                style={styles.usePromoBtn}
-                onPress={() => router.push('/customer/book')}
-              >
-                <Text style={styles.usePromoBtnText}>Use Promo at Checkout →</Text>
-              </TouchableOpacity>
+                  <View style={styles.catCardFooter}>
+                    <Text style={styles.selectServiceLink}>Select Package →</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
             </View>
-          ))}
-        </ScrollView>
+          )}
 
-        {/* ============================================================ */}
-        {/* 5. POPULAR CAR CARE ADD-ONS */}
-        {/* ============================================================ */}
-        <View style={styles.sectionHeaderBox}>
-          <View>
-            <Text style={styles.sectionHeaderTitle}>Specialized Car Care Add-ons</Text>
-            <Text style={styles.sectionHeaderSub}>Add extra protection or interior deep clean to your order.</Text>
-          </View>
-        </View>
+          {activeBottomTab === 'promos' && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.promoScrollContainer}>
+              {PROMOTIONS.map((promo) => (
+                <View key={promo.id} style={[styles.promoBannerCard, { backgroundColor: promo.colorBg }]}>
+                  <View style={styles.promoTopRow}>
+                    <Text style={styles.promoDiscountText}>{promo.discountText}</Text>
+                    <View style={styles.promoCodePill}>
+                      <Text style={styles.promoCodeText}>{promo.code}</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.promoTitleText}>{promo.title}</Text>
+                  <Text style={styles.promoDescText}>{promo.description}</Text>
+                  <TouchableOpacity
+                    style={styles.usePromoBtn}
+                    onPress={() => router.push('/customer/book')}
+                  >
+                    <Text style={styles.usePromoBtnText}>Use Promo at Checkout →</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
+          )}
 
-        <View style={[styles.addonsGrid, isTablet && styles.addonsGrid4Col]}>
-          {SERVICE_ADDONS.map((addon) => (
-            <TouchableOpacity
-              key={addon.id}
-              style={styles.addonCardItem}
-              onPress={() => router.push('/customer/book')}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.addonIconLarge}>{addon.icon}</Text>
-              <Text style={styles.addonItemName}>{addon.name}</Text>
-              <Text style={styles.addonItemDesc} numberOfLines={2}>{addon.description}</Text>
-              <View style={styles.addonPriceFooter}>
-                <Text style={styles.addonPriceText}>+RM {addon.priceMYR}</Text>
-                <Text style={styles.addonAddLink}>+ Add</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
+          {activeBottomTab === 'addons' && (
+            <View style={[styles.addonsGrid, isTablet && styles.addonsGrid4Col]}>
+              {SERVICE_ADDONS.map((addon) => (
+                <TouchableOpacity
+                  key={addon.id}
+                  style={styles.addonCardItem}
+                  onPress={() => router.push('/customer/book')}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.addonIconLarge}>{addon.icon}</Text>
+                  <Text style={styles.addonItemName}>{addon.name}</Text>
+                  <Text style={styles.addonItemDesc} numberOfLines={2}>{addon.description}</Text>
+                  <View style={styles.addonPriceFooter}>
+                    <Text style={styles.addonPriceText}>+RM {addon.priceMYR}</Text>
+                    <Text style={styles.addonAddLink}>+ Add</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
         </View>
 
       </View>
@@ -2150,5 +2158,50 @@ const styles = StyleSheet.create({
   presetPillTextActive: {
     color: '#15803d',
     fontWeight: '900',
+  },
+  bottomTabContainer: {
+    marginTop: spacing.sm,
+    marginBottom: spacing.xl,
+  },
+  bottomTabHeaderRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
+    paddingBottom: 8,
+  },
+  bottomTabBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: borderRadius.pill,
+    backgroundColor: colors.surfaceWhite,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  },
+  bottomTabBtnActive: {
+    backgroundColor: colors.primaryBlue,
+    borderColor: colors.primaryBlue,
+  },
+  bottomTabText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: colors.textDark,
+  },
+  bottomTabTextActive: {
+    color: '#ffffff',
+    fontWeight: '900',
+  },
+  locationPickItemHorizontal: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: borderRadius.md,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    maxWidth: 240,
   },
 });

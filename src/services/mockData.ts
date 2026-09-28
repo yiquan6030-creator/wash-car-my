@@ -70,6 +70,19 @@ export const SAVED_VEHICLES: Vehicle[] = [
 
 export const SAVED_LOCATIONS: LocationAddress[] = [
   {
+    id: 'loc_current',
+    label: '实时 GPS 定位 (Bangsar Telawi, KL)',
+    addressLine1: 'Jalan Telawi 3, Bangsar, Kuala Lumpur',
+    condoBuildingName: 'The Residence Condo',
+    unitParkingBay: 'Basement B2, Bay #45',
+    postcode: '59100',
+    city: 'Kuala Lumpur',
+    state: 'Kuala Lumpur',
+    propertyType: 'condo',
+    keyHandoverOption: 'in_person',
+    notesForWasher: 'Parked near lift lobby at Basement B2. Please call when you arrive.',
+  },
+  {
     id: 'loc_mcd_1',
     label: 'McDonald\'s® - Ulu Tiram DT 261',
     addressLine1: 'Mukim Tebrau, 地不佬, 81800, 新山, 柔佛, Malaysia',
@@ -84,7 +97,7 @@ export const SAVED_LOCATIONS: LocationAddress[] = [
   },
   {
     id: 'loc_dnp_1',
-    label: '01164032561 DNP大厦 - 主要入口',
+    label: 'DNP大厦 - 主要入口 (Plaza DNP)',
     addressLine1: 'Plaza DNP, Jalan Dato Abdullah Tahir, 新山',
     condoBuildingName: 'Plaza DNP Block A',
     unitParkingBay: 'B1层 访客停车场 Bay 12',
@@ -107,19 +120,6 @@ export const SAVED_LOCATIONS: LocationAddress[] = [
     propertyType: 'condo',
     keyHandoverOption: 'unlocked',
     notesForWasher: 'Car is unlocked in open parking bay 88.',
-  },
-  {
-    id: 'loc_current',
-    label: '实时 GPS 定位 (Bangsar Residence)',
-    addressLine1: 'Jalan Telawi 3, Bangsar',
-    condoBuildingName: 'The Residence Condo',
-    unitParkingBay: 'Basement B2, Bay #45',
-    postcode: '59100',
-    city: 'Kuala Lumpur',
-    state: 'Kuala Lumpur',
-    propertyType: 'condo',
-    keyHandoverOption: 'in_person',
-    notesForWasher: 'Parked near lift lobby at Basement B2. Please call when you arrive.',
   },
 ];
 
