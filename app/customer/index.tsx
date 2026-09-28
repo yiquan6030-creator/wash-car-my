@@ -38,7 +38,7 @@ export default function CustomerHomeScreen() {
   const [customAddressInput, setCustomAddressInput] = React.useState<string>(
     draftLocation?.addressLine1 || 'Jalan Telawi 3, Bangsar, Kuala Lumpur'
   );
-  const [showGreenMapPicker, setShowGreenMapPicker] = React.useState<boolean>(false);
+  const [showGreenMapPicker, setShowGreenMapPicker] = React.useState<boolean>(true);
   const [activeBottomTab, setActiveBottomTab] = React.useState<'packages' | 'promos' | 'addons'>('packages');
 
   React.useEffect(() => {
@@ -132,33 +132,23 @@ export default function CustomerHomeScreen() {
               <View style={styles.greenBoxMapWrapper}>
                 <View style={styles.greenBoxMapHeader}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Text style={styles.greenBoxMapTitle}>{t('mapPickerTitle')}</Text>
+                    <Text style={styles.greenBoxMapTitle}>🗺️ 实时 Google 地图定位 (Live Map)</Text>
                     <View style={styles.liveGpsTag}>
-                      <Text style={styles.liveGpsTagText}>LIVE MAP</Text>
+                      <Text style={styles.liveGpsTagText}>LIVE GPS</Text>
                     </View>
                   </View>
-                  <TouchableOpacity
-                    style={styles.toggleMapBtn}
-                    onPress={() => setShowGreenMapPicker(!showGreenMapPicker)}
-                  >
-                    <Text style={styles.toggleMapBtnText}>
-                      {showGreenMapPicker ? t('hideMapBtn') : t('showMapBtn')}
-                    </Text>
-                  </TouchableOpacity>
                 </View>
 
-                {showGreenMapPicker && (
-                  <GoogleMapContainer
-                    latitude={draftLocation?.latitude || 3.1293}
-                    longitude={draftLocation?.longitude || 101.6784}
-                    locationName={draftLocation?.label || '自选洗车地点'}
-                    address={draftLocation?.addressLine1 || customAddressInput}
-                    condoBuildingName={draftLocation?.condoBuildingName}
-                    unitParkingBay={draftLocation?.unitParkingBay || parkingBayInput}
-                    height={200}
-                    showOpenInAppBtn={true}
-                  />
-                )}
+                <GoogleMapContainer
+                  latitude={draftLocation?.latitude || 3.1293}
+                  longitude={draftLocation?.longitude || 101.6784}
+                  locationName={draftLocation?.label || '自选洗车地点'}
+                  address={draftLocation?.addressLine1 || customAddressInput}
+                  condoBuildingName={draftLocation?.condoBuildingName}
+                  unitParkingBay={draftLocation?.unitParkingBay || parkingBayInput}
+                  height={240}
+                  showOpenInAppBtn={true}
+                />
               </View>
 
               {/* Saved Address Pickers List (Horizontal Scroll Pill Row) */}
@@ -494,19 +484,7 @@ export default function CustomerHomeScreen() {
                   </View>
                 </View>
 
-                {/* Live Interactive Google Map Container */}
-                <GoogleMapContainer
-                  latitude={draftLocation?.latitude || 3.1293}
-                  longitude={draftLocation?.longitude || 101.6784}
-                  locationName={draftLocation?.label || 'Bangsar Residence'}
-                  address={`${draftLocation?.addressLine1 || 'Jalan Telawi 3, Bangsar'}, ${draftLocation?.city || 'Kuala Lumpur'}`}
-                  condoBuildingName={draftLocation?.condoBuildingName}
-                  unitParkingBay={draftLocation?.unitParkingBay || 'Basement B2'}
-                  height={220}
-                  showOpenInAppBtn={true}
-                />
-
-                {/* Selected Vehicle & Location Overview */}
+                {/* Quick Status Header */}
                 <View style={styles.inlineSummaryBox}>
                   <View style={styles.summaryItemRow}>
                     <Text style={styles.summaryLabelText}>{t('selectedVehicle')}</Text>
@@ -518,16 +496,28 @@ export default function CustomerHomeScreen() {
                   </View>
                 </View>
 
-                {/* Go to Dedicated Step-by-Step Booking Page Button */}
-                <TouchableOpacity
-                  style={styles.inlinePayCtaBtn}
-                  onPress={() => router.push('/customer/book')}
-                  activeOpacity={0.9}
-                >
-                  <Text style={styles.inlinePayCtaBtnText}>
-                    🚀 前往 6步分阶段预订流程 (Start Booking) →
-                  </Text>
-                </TouchableOpacity>
+                {/* Action Buttons: Fullscreen Live Map & Step-by-Step Booking */}
+                <View style={{ gap: 8 }}>
+                  <TouchableOpacity
+                    style={[styles.inlinePayCtaBtn, { backgroundColor: colors.brandNavy }]}
+                    onPress={() => router.push('/customer/tracking')}
+                    activeOpacity={0.9}
+                  >
+                    <Text style={styles.inlinePayCtaBtnText}>
+                      📍 打开全屏实时 GPS 追踪地图 (Full Live Map) →
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.inlinePayCtaBtn}
+                    onPress={() => router.push('/customer/book')}
+                    activeOpacity={0.9}
+                  >
+                    <Text style={styles.inlinePayCtaBtnText}>
+                      🚀 前往 6步分阶段预订流程 (Start Booking) →
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             )}
           </View>
@@ -535,154 +525,36 @@ export default function CustomerHomeScreen() {
         </View>
 
         {/* ============================================================ */}
-        {/* 2. TRUST & VALUE PROPOSITION BANNER (COMPACT 3-COL ROW) */}
+        {/* 2. TRUST & VALUE PROPOSITION BANNER (COMPACT 1-LINE HORIZONTAL CAROUSEL) */}
         {/* ============================================================ */}
         <View style={styles.valuePropsContainer}>
-          <View style={styles.valuePropCard}>
-            <View style={styles.propIconBox}><Text style={{ fontSize: 18 }}>⚡</Text></View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.propTitle}>30-Min Rapid Dispatch</Text>
-              <Text style={styles.propSub} numberOfLines={1}>On-demand detailers near KL & PJ hubs.</Text>
-            </View>
-          </View>
-
-          <View style={styles.valuePropCard}>
-            <View style={styles.propIconBox}><Text style={{ fontSize: 18 }}>💧</Text></View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.propTitle}>Low-Water Eco Wash</Text>
-              <Text style={styles.propSub} numberOfLines={1}>Condo approved, zero floor mess.</Text>
-            </View>
-          </View>
-
-          <View style={styles.valuePropCard}>
-            <View style={styles.propIconBox}><Text style={{ fontSize: 18 }}>🛡️</Text></View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.propTitle}>RM100k Paint Guarantee</Text>
-              <Text style={styles.propSub} numberOfLines={1}>Fully insured scratch-free process.</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* ============================================================ */}
-        {/* 3. TABBED EXPLORER: PACKAGES, PROMOTIONS & ADD-ONS */}
-        {/* ============================================================ */}
-        <View style={styles.bottomTabContainer}>
-          <View style={styles.bottomTabHeaderRow}>
-            <TouchableOpacity
-              style={[styles.bottomTabBtn, activeBottomTab === 'packages' && styles.bottomTabBtnActive]}
-              onPress={() => setActiveBottomTab('packages')}
-            >
-              <Text style={[styles.bottomTabText, activeBottomTab === 'packages' && styles.bottomTabTextActive]}>
-                {t('tabPackages')}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.bottomTabBtn, activeBottomTab === 'promos' && styles.bottomTabBtnActive]}
-              onPress={() => setActiveBottomTab('promos')}
-            >
-              <Text style={[styles.bottomTabText, activeBottomTab === 'promos' && styles.bottomTabTextActive]}>
-                {t('tabPromos')}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.bottomTabBtn, activeBottomTab === 'addons' && styles.bottomTabBtnActive]}
-              onPress={() => setActiveBottomTab('addons')}
-            >
-              <Text style={[styles.bottomTabText, activeBottomTab === 'addons' && styles.bottomTabTextActive]}>
-                {t('tabAddons')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {activeBottomTab === 'packages' && (
-            <View style={[styles.serviceCardsGrid, isTablet && styles.serviceCardsGrid2Col, isDesktop && styles.serviceCardsGrid4Col]}>
-              {SERVICE_CATEGORIES.map((cat) => (
-                <TouchableOpacity
-                  key={cat.id}
-                  style={styles.serviceDetailCard}
-                  onPress={() => router.push({ pathname: '/customer/service-detail', params: { id: cat.id } })}
-                  activeOpacity={0.88}
-                >
-                  {cat.badge && (
-                    <View style={styles.catBadgeTag}>
-                      <Text style={styles.catBadgeText}>{cat.badge}</Text>
-                    </View>
-                  )}
-                  <View style={styles.catHeaderRow}>
-                    <View style={styles.catIconCircle}>
-                      <Text style={{ fontSize: 24 }}>{cat.icon}</Text>
-                    </View>
-                    <View>
-                      <Text style={styles.catPriceTag}>RM {cat.startingPriceMYR}</Text>
-                      <Text style={styles.catTimeSub}>{cat.durationRange}</Text>
-                    </View>
-                  </View>
-
-                  <Text style={styles.catNameText}>{cat.name}</Text>
-                  <Text style={styles.catTaglineText}>{cat.tagline}</Text>
-
-                  <View style={styles.catFeaturesBox}>
-                    {cat.features.slice(0, 3).map((feat, idx) => (
-                      <View key={idx} style={styles.featRow}>
-                        <Text style={styles.featCheck}>✓</Text>
-                        <Text style={styles.featText} numberOfLines={1}>{feat}</Text>
-                      </View>
-                    ))}
-                  </View>
-
-                  <View style={styles.catCardFooter}>
-                    <Text style={styles.selectServiceLink}>Select Package →</Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-
-          {activeBottomTab === 'promos' && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.promoScrollContainer}>
-              {PROMOTIONS.map((promo) => (
-                <View key={promo.id} style={[styles.promoBannerCard, { backgroundColor: promo.colorBg }]}>
-                  <View style={styles.promoTopRow}>
-                    <Text style={styles.promoDiscountText}>{promo.discountText}</Text>
-                    <View style={styles.promoCodePill}>
-                      <Text style={styles.promoCodeText}>{promo.code}</Text>
-                    </View>
-                  </View>
-                  <Text style={styles.promoTitleText}>{promo.title}</Text>
-                  <Text style={styles.promoDescText}>{promo.description}</Text>
-                  <TouchableOpacity
-                    style={styles.usePromoBtn}
-                    onPress={() => router.push('/customer/book')}
-                  >
-                    <Text style={styles.usePromoBtnText}>Use Promo at Checkout →</Text>
-                  </TouchableOpacity>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ width: '100%' }}>
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <View style={styles.valuePropCard}>
+                <View style={styles.propIconBox}><Text style={{ fontSize: 16 }}>⚡</Text></View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.propTitle}>30-Min Rapid Dispatch</Text>
+                  <Text style={styles.propSub} numberOfLines={1}>On-demand detailers in KL & JB.</Text>
                 </View>
-              ))}
-            </ScrollView>
-          )}
+              </View>
 
-          {activeBottomTab === 'addons' && (
-            <View style={[styles.addonsGrid, isTablet && styles.addonsGrid4Col]}>
-              {SERVICE_ADDONS.map((addon) => (
-                <TouchableOpacity
-                  key={addon.id}
-                  style={styles.addonCardItem}
-                  onPress={() => router.push('/customer/book')}
-                  activeOpacity={0.85}
-                >
-                  <Text style={styles.addonIconLarge}>{addon.icon}</Text>
-                  <Text style={styles.addonItemName}>{addon.name}</Text>
-                  <Text style={styles.addonItemDesc} numberOfLines={2}>{addon.description}</Text>
-                  <View style={styles.addonPriceFooter}>
-                    <Text style={styles.addonPriceText}>+RM {addon.priceMYR}</Text>
-                    <Text style={styles.addonAddLink}>+ Add</Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
+              <View style={styles.valuePropCard}>
+                <View style={styles.propIconBox}><Text style={{ fontSize: 16 }}>💧</Text></View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.propTitle}>Low-Water Eco Wash</Text>
+                  <Text style={styles.propSub} numberOfLines={1}>Condo & basement parking approved.</Text>
+                </View>
+              </View>
+
+              <View style={styles.valuePropCard}>
+                <View style={styles.propIconBox}><Text style={{ fontSize: 16 }}>🛡️</Text></View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.propTitle}>RM100k Paint Guarantee</Text>
+                  <Text style={styles.propSub} numberOfLines={1}>Fully insured scratch-free process.</Text>
+                </View>
+              </View>
             </View>
-          )}
+          </ScrollView>
         </View>
 
       </View>
