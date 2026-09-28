@@ -123,13 +123,13 @@ export default function LoginEntranceScreen() {
                     <Text style={{ fontSize: 24 }}>👤</Text>
                   </View>
                   <View style={{ flex: 1, marginLeft: 10 }}>
-                    <Text style={styles.formTitle}>洗车客户登录入口</Text>
-                    <Text style={styles.formSub}>Customer Car Wash Booking Portal</Text>
+                    <Text style={styles.formTitle}>{t('custPortalTitle')}</Text>
+                    <Text style={styles.formSub}>{t('custPortalSub')}</Text>
                   </View>
                 </View>
 
                 <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Malaysian Phone Number / Email:</Text>
+                  <Text style={styles.inputLabel}>{t('phoneLabel')}</Text>
                   <View style={styles.inputWrapper}>
                     <Text style={styles.inputPrefix}>🇲🇾 +60</Text>
                     <TextInput
@@ -142,7 +142,7 @@ export default function LoginEntranceScreen() {
                 </View>
 
                 <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Password / OTP Code:</Text>
+                  <Text style={styles.inputLabel}>{t('passLabel')}</Text>
                   <TextInput
                     style={styles.textInputFull}
                     placeholder="Enter password or OTP"
@@ -157,7 +157,7 @@ export default function LoginEntranceScreen() {
                   onPress={handleCustomerLogin}
                   activeOpacity={0.9}
                 >
-                  <Text style={styles.loginCustomerBtnText}>登录客户账号 (Login as Customer) →</Text>
+                  <Text style={styles.loginCustomerBtnText}>{t('loginCustomerBtn')}</Text>
                 </TouchableOpacity>
 
                 {/* DEMO ONE-CLICK BUTTON */}
@@ -168,7 +168,7 @@ export default function LoginEntranceScreen() {
                     router.replace('/customer');
                   }}
                 >
-                  <Text style={styles.demoCustomerText}>⚡ 演示客户一键登录 (Lee Wei Jian)</Text>
+                  <Text style={styles.demoCustomerText}>{t('demoCustomerBtn')}</Text>
                 </TouchableOpacity>
 
                 <Text style={styles.registerSubText}>
@@ -185,13 +185,13 @@ export default function LoginEntranceScreen() {
                     <Text style={{ fontSize: 24 }}>🛵</Text>
                   </View>
                   <View style={{ flex: 1, marginLeft: 10 }}>
-                    <Text style={styles.formTitle}>洗车员/接单端登录入口</Text>
-                    <Text style={styles.formSub}>Pro Washer Partner Workbench</Text>
+                    <Text style={styles.formTitle}>{t('washerPortalTitle')}</Text>
+                    <Text style={styles.formSub}>{t('washerPortalSub')}</Text>
                   </View>
                 </View>
 
                 <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Registered Detailer Mobile / ID:</Text>
+                  <Text style={styles.inputLabel}>{t('washerIdLabel')}</Text>
                   <View style={styles.inputWrapper}>
                     <Text style={styles.inputPrefix}>🛵 ID / +60</Text>
                     <TextInput
@@ -204,7 +204,7 @@ export default function LoginEntranceScreen() {
                 </View>
 
                 <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Security PIN / Passcode:</Text>
+                  <Text style={styles.inputLabel}>{t('washerPinLabel')}</Text>
                   <TextInput
                     style={styles.textInputFull}
                     placeholder="Enter 4-digit PIN"
@@ -219,7 +219,7 @@ export default function LoginEntranceScreen() {
                   onPress={handleWasherLogin}
                   activeOpacity={0.9}
                 >
-                  <Text style={styles.loginWasherBtnText}>登录洗车员账号 (Login as Washer) →</Text>
+                  <Text style={styles.loginWasherBtnText}>{t('loginWasherBtn')}</Text>
                 </TouchableOpacity>
 
                 {/* DEMO ONE-CLICK WASHER BUTTON */}
@@ -230,7 +230,7 @@ export default function LoginEntranceScreen() {
                     router.replace('/washer');
                   }}
                 >
-                  <Text style={styles.demoWasherText}>⚡ 演示洗车员一键登录 (Amir Hazim)</Text>
+                  <Text style={styles.demoWasherText}>{t('demoWasherBtn')}</Text>
                 </TouchableOpacity>
 
                 <Text style={styles.registerSubText}>

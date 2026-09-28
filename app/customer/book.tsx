@@ -10,20 +10,22 @@ import {
   SERVICE_ADDONS 
 } from '../../src/services/mockData';
 import { Vehicle, LocationAddress, PaymentMethodType, VehicleTier } from '../../src/types';
+import GoogleMapContainer from '../../src/components/GoogleMapContainer';
 
 export default function MultiStepBookingScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const { 
     draftService, setDraftService,
-    draftVehicle, setDraftVehicle,
+    savedVehicles, draftVehicle, setDraftVehicle,
     draftLocation, setDraftLocation,
     draftBookingType, setDraftBookingType,
     scheduledDate, setScheduledDate,
     scheduledTime, setScheduledTime,
     selectedAddons, toggleAddon,
     discountMYR, applyPromoCode,
-    confirmBooking 
+    confirmBooking,
+    t
   } = useBooking();
 
   const isDesktop = width >= 1024;
@@ -31,6 +33,8 @@ export default function MultiStepBookingScreen() {
   const [promoInput, setPromoInput] = useState<string>('');
   const [selectedPayment, setSelectedPayment] = useState<PaymentMethodType>('fpx');
   const [washerNotes, setWasherNotes] = useState<string>('Basement B2, Bay #45. Please call when you arrive.');
+  const [selectedPropType, setSelectedPropType] = useState<'landed' | 'condo' | 'office'>('condo');
+  const [selectedKeyOption, setSelectedKeyOption] = useState<'in_person' | 'unlocked' | 'guardhouse'>('in_person');
   
   // Custom Vehicle Modal
   const [showAddVehicleModal, setShowAddVehicleModal] = useState<boolean>(false);
@@ -252,8 +256,24 @@ export default function MultiStepBookingScreen() {
             {currentStep === 3 && (
               <View style={styles.stepBox}>
                 <Text style={styles.stepTitle}>STEP 3: Wash Location & Parking</Text>
-                <Text style={styles.stepSubtitle}>Specify address and parking bay details for the detailer.</Text>
+                <Text style={styles.stepSubtitle}>Specify address, property type, key handover and parking bay details.</Text>
 
+                {/* Google Map Preview Container */}
+                <View style={{ borderRadius: 12, overflow: 'hidden', marginBottom: 16, borderWidth: 1, borderColor: colors.borderLight }}>
+                  <GoogleMapContainer
+                    latitude={draftLocation?.latitude || 3.1293}
+                    longitude={draftLocation?.longitude || 101.6784}
+                    locationName={draftLocation?.label || 'Selected Location'}
+                    address={draftLocation?.addressLine1 || 'Jalan Telawi 3, Bangsar'}
+                    condoBuildingName={draftLocation?.condoBuildingName}
+                    unitParkingBay={draftLocation?.unitParkingBay || washerNotes}
+                    height={180}
+                    showOpenInAppBtn={true}
+                  />
+                </View>
+
+                {/* Saved Locations Pickers */}
+                <Text style={styles.subHeader}>Saved Wash Locations</Text>
                 <View style={styles.cardsList}>
                   {SAVED_LOCATIONS.map((loc) => {
                     const isSelected = draftLocation.id === loc.id;
@@ -273,8 +293,58 @@ export default function MultiStepBookingScreen() {
                   })}
                 </View>
 
+                {/* Property Type Selection */}
+                <Text style={styles.subHeader}>Property Type</Text>
+                <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
+                  <TouchableOpacity
+                    style={[styles.tierBtn, selectedPropType === 'condo' && styles.tierBtnSelected, { flex: 1, paddingVertical: 10, alignItems: 'center' }]}
+                    onPress={() => setSelectedPropType('condo')}
+                  >
+                    <Text style={[styles.tierBtnText, selectedPropType === 'condo' && styles.tierBtnTextSelected]}>🏢 Condo / Apartment</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.tierBtn, selectedPropType === 'landed' && styles.tierBtnSelected, { flex: 1, paddingVertical: 10, alignItems: 'center' }]}
+                    onPress={() => setSelectedPropType('landed')}
+                  >
+                    <Text style={[styles.tierBtnText, selectedPropType === 'landed' && styles.tierBtnTextSelected]}>🏡 Landed House</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.tierBtn, selectedPropType === 'office' && styles.tierBtnSelected, { flex: 1, paddingVertical: 10, alignItems: 'center' }]}
+                    onPress={() => setSelectedPropType('office')}
+                  >
+                    <Text style={[styles.tierBtnText, selectedPropType === 'office' && styles.tierBtnTextSelected]}>🏢 Office / Commercial</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Key Collection / Handover Option */}
+                <Text style={styles.subHeader}>Key Collection / Handover Option</Text>
+                <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
+                  <TouchableOpacity
+                    style={[styles.tierBtn, selectedKeyOption === 'in_person' && styles.tierBtnSelected, { flex: 1, paddingVertical: 10, alignItems: 'center' }]}
+                    onPress={() => setSelectedKeyOption('in_person')}
+                  >
+                    <Text style={[styles.tierBtnText, selectedKeyOption === 'in_person' && styles.tierBtnTextSelected]}>👤 Key In Person</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.tierBtn, selectedKeyOption === 'unlocked' && styles.tierBtnSelected, { flex: 1, paddingVertical: 10, alignItems: 'center' }]}
+                    onPress={() => setSelectedKeyOption('unlocked')}
+                  >
+                    <Text style={[styles.tierBtnText, selectedKeyOption === 'unlocked' && styles.tierBtnTextSelected]}>🔓 Car Left Unlocked</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.tierBtn, selectedKeyOption === 'guardhouse' && styles.tierBtnSelected, { flex: 1, paddingVertical: 10, alignItems: 'center' }]}
+                    onPress={() => setSelectedKeyOption('guardhouse')}
+                  >
+                    <Text style={[styles.tierBtnText, selectedKeyOption === 'guardhouse' && styles.tierBtnTextSelected]}>🛡️ Guardhouse Counter</Text>
+                  </TouchableOpacity>
+                </View>
+
                 {/* Parking Bay Instructions */}
-                <Text style={styles.subHeader}>Parking Bay & Access Instructions:</Text>
+                <Text style={styles.subHeader}>Parking Bay & Access Instructions</Text>
                 <TextInput
                   style={styles.notesInput}
                   placeholder="e.g. Basement B2, Parked near lift lobby, Call upon arrival"

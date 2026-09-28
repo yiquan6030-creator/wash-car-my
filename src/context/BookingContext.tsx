@@ -48,8 +48,11 @@ interface BookingContextType {
   // Customer Booking Draft State
   draftService: ServiceCategory;
   setDraftService: (service: ServiceCategory) => void;
+  savedVehicles: Vehicle[];
   draftVehicle: Vehicle;
   setDraftVehicle: (vehicle: Vehicle) => void;
+  addVehicle: (newVehicle: Omit<Vehicle, 'id'>) => Vehicle;
+  removeVehicle: (id: string) => void;
   draftLocation: LocationAddress;
   setDraftLocation: (location: LocationAddress) => void;
   isLocatingGps: boolean;
@@ -132,9 +135,29 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setUserProfile(null);
   };
 
-  // Customer Booking Draft Defaults
+  // Vehicle Garage State & Management
+  const [savedVehicles, setSavedVehicles] = useState<Vehicle[]>(SAVED_VEHICLES);
   const [draftService, setDraftService] = useState<ServiceCategory>(SERVICE_CATEGORIES[1]); // Interior + Exterior
   const [draftVehicle, setDraftVehicle] = useState<Vehicle>(SAVED_VEHICLES[0]); // Myvi
+
+  const addVehicle = (newVehicleData: Omit<Vehicle, 'id'>): Vehicle => {
+    const newVehicle: Vehicle = {
+      id: 'v_custom_' + Date.now(),
+      ...newVehicleData,
+    };
+    const updated = [newVehicle, ...savedVehicles];
+    setSavedVehicles(updated);
+    setDraftVehicle(newVehicle);
+    return newVehicle;
+  };
+
+  const removeVehicle = (id: string) => {
+    const updated = savedVehicles.filter(v => v.id !== id);
+    setSavedVehicles(updated);
+    if (draftVehicle.id === id && updated.length > 0) {
+      setDraftVehicle(updated[0]);
+    }
+  };
   const [draftLocation, setDraftLocation] = useState<LocationAddress>(SAVED_LOCATIONS[0]);
   const [isLocatingGps, setIsLocatingGps] = useState<boolean>(false);
   const [draftBookingType, setDraftBookingType] = useState<'now' | 'scheduled'>('now');
@@ -471,8 +494,11 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       t,
       draftService,
       setDraftService,
+      savedVehicles,
       draftVehicle,
       setDraftVehicle,
+      addVehicle,
+      removeVehicle,
       draftLocation,
       setDraftLocation,
       isLocatingGps,

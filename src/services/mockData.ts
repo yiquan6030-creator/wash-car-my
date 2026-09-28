@@ -81,10 +81,12 @@ export const SAVED_LOCATIONS: LocationAddress[] = [
     propertyType: 'condo',
     keyHandoverOption: 'in_person',
     notesForWasher: 'Parked near lift lobby at Basement B2. Please call when you arrive.',
+    latitude: 3.1293,
+    longitude: 101.6784,
   },
   {
-    id: 'loc_mcd_1',
-    label: 'McDonald\'s® - Ulu Tiram DT 261',
+    id: 'loc_tebrau_1',
+    label: 'McDonald\'s® - Ulu Tiram DT 261 (地不佬)',
     addressLine1: 'Mukim Tebrau, 地不佬, 81800, 新山, 柔佛, Malaysia',
     condoBuildingName: 'McDonald\'s Drive-Thru Parking',
     unitParkingBay: '露天停车场 08号车位',
@@ -94,10 +96,12 @@ export const SAVED_LOCATIONS: LocationAddress[] = [
     propertyType: 'office',
     keyHandoverOption: 'in_person',
     notesForWasher: 'Parked near Drive-Thru entrance bay 08.',
+    latitude: 1.5450,
+    longitude: 103.8050,
   },
   {
     id: 'loc_dnp_1',
-    label: 'DNP大厦 - 主要入口 (Plaza DNP)',
+    label: 'DNP大厦 - 主要入口 (Plaza DNP 新山)',
     addressLine1: 'Plaza DNP, Jalan Dato Abdullah Tahir, 新山',
     condoBuildingName: 'Plaza DNP Block A',
     unitParkingBay: 'B1层 访客停车场 Bay 12',
@@ -107,6 +111,8 @@ export const SAVED_LOCATIONS: LocationAddress[] = [
     propertyType: 'office',
     keyHandoverOption: 'guardhouse',
     notesForWasher: 'Key left at Plaza DNP security counter.',
+    latitude: 1.4746,
+    longitude: 103.7622,
   },
   {
     id: 'loc_berjaya_1',
@@ -120,6 +126,8 @@ export const SAVED_LOCATIONS: LocationAddress[] = [
     propertyType: 'condo',
     keyHandoverOption: 'unlocked',
     notesForWasher: 'Car is unlocked in open parking bay 88.',
+    latitude: 1.4682,
+    longitude: 103.7745,
   },
 ];
 

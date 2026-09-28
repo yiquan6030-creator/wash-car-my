@@ -8,60 +8,13 @@ import MockMapContainer from '../../src/components/MockMapContainer';
 import GoogleMapContainer from '../../src/components/GoogleMapContainer';
 import { PaymentMethodType } from '../../src/types';
 
-const MALAYSIA_PRESET_LOCATIONS = [
-  {
-    id: 'preset_tebrau',
-    label: '📍 新山地不佬 Mukim Tebrau / Mount Austin',
-    addressLine1: 'Mukim Tebrau, 地不佬, 81800, 新山, 柔佛, Malaysia',
-    city: 'Johor Bahru',
-    state: 'Johor',
-    latitude: 1.5450,
-    longitude: 103.8050,
-    condoBuildingName: 'Mount Austin Commercial Area',
-    unitParkingBay: '露天 08号车位',
-  },
-  {
-    id: 'preset_mcd_tiram',
-    label: '📍 McDonald\'s Ulu Tiram DT (地不佬路)',
-    addressLine1: 'McDonald\'s Ulu Tiram DT, Mukim Tebrau, 81800 JB',
-    city: 'Johor Bahru',
-    state: 'Johor',
-    latitude: 1.5992,
-    longitude: 103.8188,
-    condoBuildingName: 'McDonald\'s Drive-Thru Parking',
-    unitParkingBay: 'Drive-Thru 露天车位 #02',
-  },
-  {
-    id: 'preset_dnp',
-    label: '📍 新山 DNP 大厦 (Plaza DNP)',
-    addressLine1: 'Plaza DNP, Jalan Dato Abdullah Tahir, 新山',
-    city: 'Johor Bahru',
-    state: 'Johor',
-    latitude: 1.4746,
-    longitude: 103.7622,
-    condoBuildingName: 'Plaza DNP Block A',
-    unitParkingBay: 'B1层 12号车位',
-  },
-  {
-    id: 'preset_bangsar',
-    label: '📍 吉隆坡 Bangsar Telawi 3',
-    addressLine1: 'Jalan Telawi 3, Bangsar, Kuala Lumpur',
-    city: 'Kuala Lumpur',
-    state: 'Kuala Lumpur',
-    latitude: 3.1293,
-    longitude: 101.6784,
-    condoBuildingName: 'The Residence Condo',
-    unitParkingBay: 'B2层 #45车位',
-  },
-];
-
 export default function CustomerHomeScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const { 
     activeBooking, 
     draftService, setDraftService, 
-    draftVehicle, setDraftVehicle,
+    savedVehicles, draftVehicle, setDraftVehicle,
     draftLocation, setDraftLocation,
     isLocatingGps, fetchGpsLocation,
     confirmBooking,
@@ -95,14 +48,14 @@ export default function CustomerHomeScreen() {
   }, [draftLocation]);
 
   const washServicesGrid = [
-    { id: 'booking', name: '提前预订', icon: '📅', desc: 'Schedule Wash', catId: 'interior_exterior' },
-    { id: 'fleet', name: '团队出行洗', icon: '🚗', desc: 'Fleet Wash', catId: 'exterior_wash' },
-    { id: 'priority', name: '优先快速洗', icon: '⚡', desc: 'Priority Express', catId: 'exterior_wash' },
-    { id: 'plus', name: '精致内外洗', icon: '✨', desc: 'Full Detail', catId: 'interior_exterior' },
-    { id: 'steam', name: '蒸汽高温杀菌', icon: '♨️', desc: 'Thermal Steam', catId: 'steam_detailing' },
-    { id: 'ceramic', name: '漆面镀膜养护', icon: '🛡️', desc: 'Ceramic Coating', catId: 'steam_detailing' },
-    { id: 'delivery', name: '洗车用品送货', icon: '🚚', desc: 'Product Delivery', catId: 'low_water_eco' },
-    { id: 'view_all', name: '查看全部', icon: '📱', desc: 'View All Services', catId: 'interior_exterior' },
+    { id: 'booking', name: t('svcBooking'), icon: '📅', desc: 'Schedule Wash', catId: 'interior_exterior' },
+    { id: 'fleet', name: t('svcFleet'), icon: '🚗', desc: 'Fleet Wash', catId: 'exterior_wash' },
+    { id: 'priority', name: t('svcPriority'), icon: '⚡', desc: 'Priority Express', catId: 'exterior_wash' },
+    { id: 'plus', name: t('svcPlus'), icon: '✨', desc: 'Full Detail', catId: 'interior_exterior' },
+    { id: 'steam', name: t('svcSteam'), icon: '♨️', desc: 'Thermal Steam', catId: 'steam_detailing' },
+    { id: 'ceramic', name: t('svcCeramic'), icon: '🛡️', desc: 'Ceramic Coating', catId: 'steam_detailing' },
+    { id: 'delivery', name: t('svcDelivery'), icon: '🚚', desc: 'Product Delivery', catId: 'low_water_eco' },
+    { id: 'view_all', name: t('svcViewAll'), icon: '📱', desc: 'View All Services', catId: 'interior_exterior' },
   ];
 
   return (
@@ -179,7 +132,7 @@ export default function CustomerHomeScreen() {
               <View style={styles.greenBoxMapWrapper}>
                 <View style={styles.greenBoxMapHeader}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Text style={styles.greenBoxMapTitle}>🗺️ Google 地图自选/微调点位 (Interactive Map Picker)</Text>
+                    <Text style={styles.greenBoxMapTitle}>{t('mapPickerTitle')}</Text>
                     <View style={styles.liveGpsTag}>
                       <Text style={styles.liveGpsTagText}>LIVE MAP</Text>
                     </View>
@@ -189,58 +142,22 @@ export default function CustomerHomeScreen() {
                     onPress={() => setShowGreenMapPicker(!showGreenMapPicker)}
                   >
                     <Text style={styles.toggleMapBtnText}>
-                      {showGreenMapPicker ? '收起地图 ▲' : '展开地图 ▼'}
+                      {showGreenMapPicker ? t('hideMapBtn') : t('showMapBtn')}
                     </Text>
                   </TouchableOpacity>
                 </View>
 
                 {showGreenMapPicker && (
-                  <>
-                    <GoogleMapContainer
-                      latitude={draftLocation?.latitude || 3.1293}
-                      longitude={draftLocation?.longitude || 101.6784}
-                      locationName={draftLocation?.label || '自选洗车地点'}
-                      address={draftLocation?.addressLine1 || customAddressInput}
-                      condoBuildingName={draftLocation?.condoBuildingName}
-                      unitParkingBay={draftLocation?.unitParkingBay || parkingBayInput}
-                      height={200}
-                      showOpenInAppBtn={true}
-                    />
-
-                    {/* Quick Selection Location Pills */}
-                    <Text style={styles.presetSectionTitle}>📍 快捷点击自选/切换地图热门定位点 (Preset Map Spots):</Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.presetPillsScroll}>
-                      {MALAYSIA_PRESET_LOCATIONS.map((preset) => {
-                        const isSelected = draftLocation?.latitude === preset.latitude;
-                        return (
-                          <TouchableOpacity
-                            key={preset.id}
-                            style={[styles.presetPill, isSelected && styles.presetPillActive]}
-                            onPress={() => {
-                              setDraftLocation({
-                                id: preset.id,
-                                label: preset.label,
-                                addressLine1: preset.addressLine1,
-                                city: preset.city,
-                                state: preset.state,
-                                postcode: '81800',
-                                latitude: preset.latitude,
-                                longitude: preset.longitude,
-                                condoBuildingName: preset.condoBuildingName,
-                                unitParkingBay: preset.unitParkingBay,
-                                isRealGps: true,
-                              });
-                              setCustomAddressInput(preset.addressLine1);
-                            }}
-                          >
-                            <Text style={[styles.presetPillText, isSelected && styles.presetPillTextActive]}>
-                              {preset.label}
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </ScrollView>
-                  </>
+                  <GoogleMapContainer
+                    latitude={draftLocation?.latitude || 3.1293}
+                    longitude={draftLocation?.longitude || 101.6784}
+                    locationName={draftLocation?.label || '自选洗车地点'}
+                    address={draftLocation?.addressLine1 || customAddressInput}
+                    condoBuildingName={draftLocation?.condoBuildingName}
+                    unitParkingBay={draftLocation?.unitParkingBay || parkingBayInput}
+                    height={200}
+                    showOpenInAppBtn={true}
+                  />
                 )}
               </View>
 
@@ -282,7 +199,7 @@ export default function CustomerHomeScreen() {
                 </View>
 
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.vehicleScroll}>
-                  {SAVED_VEHICLES.map((v) => {
+                  {savedVehicles.map((v) => {
                     const isSelected = draftVehicle.id === v.id;
                     return (
                       <TouchableOpacity
@@ -416,7 +333,7 @@ export default function CustomerHomeScreen() {
                     onPress={() => {
                       const matchedCat = SERVICE_CATEGORIES.find(c => c.id === item.catId) || SERVICE_CATEGORIES[0];
                       setDraftService(matchedCat);
-                      setIsInlineCheckoutOpen(true);
+                      router.push('/customer/book');
                     }}
                     activeOpacity={0.8}
                   >
@@ -442,15 +359,15 @@ export default function CustomerHomeScreen() {
 
               <TouchableOpacity
                 style={styles.mainBookBtn}
-                onPress={() => setIsInlineCheckoutOpen(true)}
+                onPress={() => router.push('/customer/book')}
                 activeOpacity={0.9}
               >
-                <Text style={styles.mainBookBtnText}>{t('showMapPayBtn')}</Text>
+                <Text style={styles.mainBookBtnText}>⚡ 开始预约上门洗车 (Book Wash) →</Text>
               </TouchableOpacity>
             </View>
           </View>
 
-          {/* RIGHT COLUMN: INTERACTIVE MAP & PAYMENT CHECKOUT PANEL (OR LIVE TRACKING) */}
+          {/* RIGHT COLUMN: LIVE TRACKING OR QUICK START BOOKING CARD */}
           <View style={[styles.activeTrackingCard, isDesktop && styles.columnFlex]}>
             {activeBooking ? (
               <>
@@ -564,16 +481,16 @@ export default function CustomerHomeScreen() {
                   </TouchableOpacity>
                 </View>
               </>
-            ) : isInlineCheckoutOpen ? (
-              /* INLINE MAP & CHECKOUT PANEL (NO PAGE JUMP REQUIRED) */
+            ) : (
+              /* CLEAN MAP PREVIEW & QUICK START BOOKING CARD */
               <View style={styles.inlineCheckoutCard}>
                 <View style={styles.inlineHeaderRow}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.inlineCheckoutHeaderTitle}>🗺️ 地图定位与即时支付通道</Text>
-                    <Text style={styles.inlineCheckoutHeaderSub}>Live Location Map & One-Click Checkout</Text>
+                    <Text style={styles.inlineCheckoutHeaderTitle}>{t('inlineMapTitle')}</Text>
+                    <Text style={styles.inlineCheckoutHeaderSub}>{t('inlineMapSub')}</Text>
                   </View>
                   <View style={styles.liveEtaPill}>
-                    <Text style={styles.liveEtaPillText}>⏱️ 30分钟内极速上门</Text>
+                    <Text style={styles.liveEtaPillText}>{t('rapidEtaPill')}</Text>
                   </View>
                 </View>
 
@@ -584,94 +501,32 @@ export default function CustomerHomeScreen() {
                   locationName={draftLocation?.label || 'Bangsar Residence'}
                   address={`${draftLocation?.addressLine1 || 'Jalan Telawi 3, Bangsar'}, ${draftLocation?.city || 'Kuala Lumpur'}`}
                   condoBuildingName={draftLocation?.condoBuildingName}
-                  unitParkingBay={draftLocation?.unitParkingBay || parkingBayInput}
+                  unitParkingBay={draftLocation?.unitParkingBay || 'Basement B2'}
                   height={220}
                   showOpenInAppBtn={true}
                 />
 
-                {/* Order Summary Box */}
+                {/* Selected Vehicle & Location Overview */}
                 <View style={styles.inlineSummaryBox}>
                   <View style={styles.summaryItemRow}>
-                    <Text style={styles.summaryLabelText}>已选洗车套餐:</Text>
-                    <Text style={styles.summaryValuePrice}>{draftService.name} (RM {draftService.startingPriceMYR}.00)</Text>
-                  </View>
-                  <View style={styles.summaryItemRow}>
-                    <Text style={styles.summaryLabelText}>已选车辆与车牌:</Text>
-                    <Text style={styles.summaryValueText}>{draftVehicle.make} {draftVehicle.model} • <Text style={{ fontWeight: '900', color: '#0f172a' }}>{draftVehicle.plateNumber}</Text> ({draftVehicle.color})</Text>
+                    <Text style={styles.summaryLabelText}>{t('selectedVehicle')}</Text>
+                    <Text style={styles.summaryValueText}>{draftVehicle.make} {draftVehicle.model} • <Text style={{ fontWeight: '900', color: '#0f172a' }}>{draftVehicle.plateNumber}</Text></Text>
                   </View>
                   <View style={styles.summaryItemRowNoBorder}>
-                    <Text style={styles.summaryLabelText}>地点与钥匙交接:</Text>
-                    <Text style={styles.summaryValueText}>
-                      {selectedPropType === 'condo' ? '🏢 公寓大厦' : '🏠 独栋排屋'} • {selectedKeyOption === 'in_person' ? '🔑 面交钥匙' : '🔓 车已解锁'}
-                    </Text>
+                    <Text style={styles.summaryLabelText}>{t('selectedPackage')}</Text>
+                    <Text style={styles.summaryValuePrice}>{draftService.name} (RM {draftService.startingPriceMYR}.00)</Text>
                   </View>
                 </View>
 
-                {/* Payment Method Selector */}
-                <Text style={styles.paymentSectionHeader}>💳 选择支付通道 (Payment Method):</Text>
-                <View style={styles.paymentGridRow}>
-                  <TouchableOpacity
-                    style={[styles.payMethodChip, inlinePayment === 'tng_ewallet' && styles.payMethodChipActive]}
-                    onPress={() => setInlinePayment('tng_ewallet')}
-                  >
-                    <Text style={{ fontSize: 18 }}>💙</Text>
-                    <Text style={[styles.payMethodText, inlinePayment === 'tng_ewallet' && styles.payMethodTextActive]}>TNG eWallet</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.payMethodChip, inlinePayment === 'duitnow' && styles.payMethodChipActive]}
-                    onPress={() => setInlinePayment('duitnow')}
-                  >
-                    <Text style={{ fontSize: 18 }}>💚</Text>
-                    <Text style={[styles.payMethodText, inlinePayment === 'duitnow' && styles.payMethodTextActive]}>DuitNow QR</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.payMethodChip, inlinePayment === 'fpx' && styles.payMethodChipActive]}
-                    onPress={() => setInlinePayment('fpx')}
-                  >
-                    <Text style={{ fontSize: 18 }}>🏦</Text>
-                    <Text style={[styles.payMethodText, inlinePayment === 'fpx' && styles.payMethodTextActive]}>FPX Online</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.payMethodChip, inlinePayment === 'card' && styles.payMethodChipActive]}
-                    onPress={() => setInlinePayment('card')}
-                  >
-                    <Text style={{ fontSize: 18 }}>💳</Text>
-                    <Text style={[styles.payMethodText, inlinePayment === 'card' && styles.payMethodTextActive]}>Credit Card</Text>
-                  </TouchableOpacity>
-                </View>
-
-                {/* Confirm & Pay Button */}
+                {/* Go to Dedicated Step-by-Step Booking Page Button */}
                 <TouchableOpacity
                   style={styles.inlinePayCtaBtn}
-                  onPress={() => {
-                    confirmBooking(inlinePayment);
-                    alert(`✅ 支付成功！已为您成功预约 ${draftService.name} 上门洗车。服务人员即将接单出发！`);
-                  }}
+                  onPress={() => router.push('/customer/book')}
                   activeOpacity={0.9}
                 >
                   <Text style={styles.inlinePayCtaBtnText}>
-                    💳 立即支付 RM {draftService.startingPriceMYR}.00 并确认预约 →
+                    🚀 前往 6步分阶段预订流程 (Start Booking) →
                   </Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              /* Placeholder */
-              <View style={styles.emptyActiveState}>
-                <View style={styles.emptyIconCircle}>
-                  <Text style={{ fontSize: 32 }}>🛵</Text>
-                </View>
-                <Text style={styles.emptyActiveTitle}>No Active Wash Order Right Now</Text>
-                <Text style={styles.emptyActiveSub}>
-                  Select your vehicle and package on the left to book a mobile detailer straight to your doorstep.
-                </Text>
-                <TouchableOpacity
-                  style={styles.quickBookOutlineBtn}
-                  onPress={() => setIsInlineCheckoutOpen(true)}
-                >
-                  <Text style={styles.quickBookOutlineText}>Configure Wash & Pay →</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -718,7 +573,7 @@ export default function CustomerHomeScreen() {
               onPress={() => setActiveBottomTab('packages')}
             >
               <Text style={[styles.bottomTabText, activeBottomTab === 'packages' && styles.bottomTabTextActive]}>
-                ✨ 热门洗车套餐 (Packages)
+                {t('tabPackages')}
               </Text>
             </TouchableOpacity>
 
@@ -727,7 +582,7 @@ export default function CustomerHomeScreen() {
               onPress={() => setActiveBottomTab('promos')}
             >
               <Text style={[styles.bottomTabText, activeBottomTab === 'promos' && styles.bottomTabTextActive]}>
-                🏷️ 优惠券折扣 (Promos)
+                {t('tabPromos')}
               </Text>
             </TouchableOpacity>
 
@@ -736,7 +591,7 @@ export default function CustomerHomeScreen() {
               onPress={() => setActiveBottomTab('addons')}
             >
               <Text style={[styles.bottomTabText, activeBottomTab === 'addons' && styles.bottomTabTextActive]}>
-                🛡️ 洗车加购项目 (Add-ons)
+                {t('tabAddons')}
               </Text>
             </TouchableOpacity>
           </View>
