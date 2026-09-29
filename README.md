@@ -55,14 +55,24 @@ Windows 构建较慢时：`npx expo export --platform web --max-workers 2`。
 
 本地预览：先构建，再运行 `node scripts/preview.cjs`，访问 http://127.0.0.1:4173。
 
-## 地图首页（Grab 式交互）
 
-- Web 首页使用 Leaflet / OpenStreetMap 实际街道地图，支持拖动、缩放、点击和方向键选点。
-- 搜索马来西亚地名、常用地址、GPS 定位和手动填址；位置需确认后才用于预约。
-- 地图选点保留精确停车坐标，不替换成地理编码返回的道路中心；网络错误可手动补充详细地址。
-- 底部选择车辆、洗车套餐及立即/预约服务，价格跟随车型；下一步进入时间选择。
-- 最近选择的已保存地址可在重新进入时恢复。
-- 附近真实师傅位置和实时调度尚未接入，界面不显示虚构师傅坐标。
-- 原生版保留地址 / GPS 和外部地图入口，Leaflet 拖动选点目前限 Web。
+## Google 地图首页
 
-地图来源与使用约束：[Leaflet](https://leafletjs.com/reference.html)、[OSM tiles](https://operations.osmfoundation.org/policies/tiles/)、[Nominatim](https://operations.osmfoundation.org/policies/nominatim/)。地名搜索仅在用户提交时请求，带缓存并限制每秒一次，不做自动补全或拖动时连续反查。正式多用户上线需配置自有/商业服务端地理编码代理进行全局限流；默认公共服务仅适合本地低流量体验。可通过 `.env.example` 中的地图与地理编码 URL 切换服务。
+首页已切换为 Google Maps，不再使用 Leaflet / OpenStreetMap。
+
+未配置 Key 时显示 Google 地图浏览 iframe。可浏览缩放，但 iframe 内移动的位置不会回传订单；上门地址须通过常用地址、GPS 或手动填写确认。未配置 Key 时 Google 地址搜索不可用。
+
+配置交互地图：
+
+1. 在 Google Cloud 项目中启用 Maps JavaScript API 和 Geocoding API，配置所需计费。
+2. 创建浏览器 API Key，设置 HTTP referrer 网站限制和 API 限制。开发预览允许 `http://127.0.0.1:4173/*`、`http://localhost:4173/*`；上线仅允许自己的域名。
+3. 在根目录 `.env.local` 设置 `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=你的浏览器Key`。不要提交 `.env.local`，不要放服务端密钥。
+4. 重新执行 `npm run build:web`，刷新页面。Expo 公共环境变量在构建时注入。
+
+配置后首页通过 Maps JavaScript API 提供拖动、点击选点和缩放；地址搜索与逆地理编码使用 Google Geocoder，精确停车坐标会保留。搜索按马来西亚地区过滤，目前为地址查询，不是 Places 商户自动补全。
+
+原生版使用现有外部 Google Maps 入口；Web 交互 SDK 不等于原生 Google Maps SDK。
+
+目前仅验证无 Key 浏览模式、类型检查及 Google 地址适配器模拟测试。需要有效 Key 后才能验证真实 SDK 加载、权限限制和地址搜索。
+
+官方配置说明：https://developers.google.com/maps/documentation/javascript/get-api-key

@@ -7,6 +7,7 @@ import { SERVICE_CATEGORIES } from '../../src/services/mockData';
 import { isOpen, servicePrice, statusLabels } from '../../src/services/bookingRules';
 import { MapPoint, reverseAddress, searchAddresses, validPoint } from '../../src/services/geocoding';
 import LocationMap from '../../src/components/LocationMap';
+import { googleMapsConfigured } from '../../src/lib/googleMaps';
 import { LocationAddress } from '../../src/types';
 const green = '#008f64';
 const serviceNames: Record<string,string> = { exterior_wash: '车身快洗', interior_exterior: '内外精洗', low_water_eco: '环保少水洗', steam_detailing: '蒸汽深度护理' };
@@ -100,7 +101,7 @@ export default function Home() {
   const close = () => { requestId.current++; setBusy(false); setSheet(null); setNotice(''); };
   const panelHeight = Math.min(310, Math.max(285, height * 0.43));
   return <View style={s.page}>
-    <View style={[s.map, { bottom: desktop ? 0 : panelHeight - 20, left: desktop ? 410 : 0 }]}>
+    <View style={[s.map, { bottom: desktop ? 0 : panelHeight, left: desktop ? 410 : 0 }]}>
       <LocationMap target={target} onSelect={onMapSelect} />
       <View style={s.searchOverlay}>
         <TouchableOpacity accessibilityRole="button" accessibilityLabel="搜索上门地址" style={s.searchBar} onPress={() => { setSheet('search'); setNotice(''); }}>
@@ -110,7 +111,7 @@ export default function Home() {
           {c.savedLocations.slice(0,4).map((location,i) => <TouchableOpacity key={location.id} accessibilityRole="button" accessibilityLabel={`选择常用地址 ${location.label}`} onPress={() => chooseSaved(location)} style={[s.savedChip,c.draftLocation.id===location.id && s.savedSelected]}><MapPin size={13} color={green}/><Text numberOfLines={1} style={s.savedText}>{i===0?'家 · ':''}{location.label.replace(/📍/g,'')}</Text></TouchableOpacity>)}
         </ScrollView>}
       </View>
-      <View pointerEvents="none" style={s.pinCaption}><Text style={s.pinCaptionText}>{pending ? '松开地图后，确认这个停车位置' : '上门洗车地点'}</Text></View>
+      {googleMapsConfigured && <View pointerEvents="none" style={s.pinCaption}><Text style={s.pinCaptionText}>{pending ? '松开地图后，确认这个停车位置' : '上门洗车地点'}</Text></View>}
       <TouchableOpacity accessibilityRole="button" accessibilityLabel="定位到我的当前位置" style={s.locate} onPress={locate}>{c.isLocatingGps?<ActivityIndicator color={green}/>:<LocateFixed size={23} color={green}/>}</TouchableOpacity>
       {pending && <TouchableOpacity accessibilityRole="button" style={s.pinConfirm} onPress={() => identifyPin()}><Check size={15} color="#fff"/><Text style={s.white}>确认地图位置</Text></TouchableOpacity>}
     </View>
@@ -118,6 +119,7 @@ export default function Home() {
       {!desktop && <View style={s.handle}/>}
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.panelContent}>
         {desktop && <View style={s.titleRow}><View><Text style={s.title}>洗车，上门就好。</Text><Text style={s.subtitle}>选好位置与服务，剩下的交给我们</Text></View><View style={s.doorstep}><Car color={green} size={22}/></View></View>}
+        {!googleMapsConfigured && <Text style={s.locationSub}>Google 地图浏览 · 请用地址列表或定位确认上门地点</Text>}
         {!!notice && !sheet && <Text accessibilityRole="alert" style={s.notice}>{notice}</Text>}
         {current && <TouchableOpacity accessibilityRole="button" style={s.orderStrip} onPress={() => { c.selectBooking(current.id); router.push('/customer/tracking'); }}><Navigation color={green} size={17}/><Text style={{flex:1,color:'#155b43',fontSize:12}}>当前订单 · {statusLabels[current.status]}</Text><ChevronRight size={16} color={green}/></TouchableOpacity>}
         <TouchableOpacity accessibilityRole="button" style={s.locationRow} onPress={() => { if (pending) { identifyPin(); return; } setEditor(c.draftLocation); setSheet('address'); setNotice(''); }}><MapPin size={20} color={green}/><View style={{flex:1}}><Text style={s.locationTitle} numberOfLines={1}>{pending ? '地图位置待确认' : c.draftLocation.label.replace('实时 GPS 定位', '示例地址')}</Text><Text style={s.locationSub} numberOfLines={1}>{pending ? `${pin.latitude.toFixed(5)}, ${pin.longitude.toFixed(5)}` : c.draftLocation.unitParkingBay || c.draftLocation.addressLine1}</Text></View><ChevronRight size={17} color="#9aaa9f"/></TouchableOpacity>
